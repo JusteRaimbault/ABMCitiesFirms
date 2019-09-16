@@ -1,13 +1,116 @@
 
 
+
+;;
+; evolve city size and structure at the macroscopic level
 to cities:evolve-cities
+  
+  if cities:structure-evolution-mode = "fixed" [
+    ; do nothing - baseline 
+  ]
+  
+  if cities:structure-evolution-mode = "size-interactions" [
+    ; TODO 
+  
+  ]
   
 end
 
 
 
+
+
+
+
+;;
+; kmeans geographical setup for countries
+;
+to cities:set-countries-clustering
+  
+  ask cities [set city:feature (list xcor ycor)]
+  
+  let clusters kmeans:cluster-by-feature cities setup:countries-number 1000 0.01 "city:feature"
+  ;let colors sublist base-colors 0 setup:countries-number ; not enough base colors
+  let k 0
+  (foreach clusters [;colors [
+    ;[cluster col] -> ask cluster [set color col set city:country k] set k k + 1
+    cluster -> ask cluster [set city:country k] set k k + 1
+  ])
+  
+end
+
+
+;;
+;
+to cities:setup-sectors-composition
+  
+  set runtime:max-gdp max [city:gdp] of cities
+  set runtime:min-gdp min [city:gdp] of cities
+  
+  ask cities [
+    set city:sector-composition city:initial-sector-composition
+  ]
+    
+end
+
+
+
+
+
+;;
+; initial sector composition of cities
+;  may depend on size ; possibility to add regional/spatial correlations?
+to-report city:initial-sector-composition
+  
+  if setup:setup-type = "synthetic" [
+    
+    if setup:sector-composition-mode = "random" [
+      ; random probabilities
+      let res [] repeat setup:sectors-number [set res lput (random-float 1) res] let s sum res report (map [? -> ? / s] res)
+    ]
+    
+    if setup:sector-composition-mode = "log-normal" [
+     ; solve for mu,sigma of the log-normal as a function of gdp
+      ; we aim at having a log-normal mostly in [0,1] such that
+      ; (mode,variance) =  1 / K for the smallest log(E_i) and = 1/2 for the largest log(E_i)
+      ;  writing
+      ;  e_i = (log(E_i) - log(E_imin))/(log(E_imax) - log(E_imin)) * (1/2 - 1/K) + 1/K
+      ;  this yields
+      ;   (1)  mu - sigma^2 = log(e_i)
+      ;   (2) -3 sigma^2 - 2 log(exp(sigma^2) - 1) = log(e_i)
+      ;  => sigma^2 is the unique positive root of f(X)=0 with f(X) = -3X - 2 ln(exp(X) - 1) - ln(e_i)
+      let ei ((log city:gdp 10) - (log runtime:min-gdp 10))/((log runtime:max-gdp 10) - (log runtime:min-gdp 10))*(0.5 - 1 / setup:sectors-number) + 1 / setup:sectors-number
+      let f [x -> -3 * x - 2 * ln (exp(x) - 1) - ln (ei)]
+      let sigma2 numanal:Brent-root f 0.0001 100
+      let sigma sqrt sigma2 let mu (ln ei) + sigma2
+      let lnpdf [x -> 1 / (x * sigma * sqrt (2 * pi)) * exp (- ((ln x - mu)^ 2)/(2 * sigma2))]
+      ;let prevprobas map lnpdf (seq (1 / setup:sectors-number) (setup:sectors-number - 1)
+      
+    ]
+    
+    
+      
+  ]
+  
+  ;; TODO
+  if setup:setup-type = "real" [
+    error "unimplemented"
+  ]
+  
+end
+
+
 ;;
 ; basic constructor
-to cities:new-city
+to cities:new-city [number]
+  setxy random-xcor random-ycor
+  set shape "circle"
+  ; size and color fixed in display
+  
+  set city:number number
+  
+  set city:gdp (setup:max-gdp / (number ^ setup:scaling-exponent))
+  
+  ; sector updated later - need boundaries of gdp
   
 end

@@ -11,4 +11,6 @@ to main:go
   
   firms:add-linkage
   
+  if runtime:headless? = 0 [display:update-display]
+  
 end

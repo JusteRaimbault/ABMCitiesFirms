@@ -1,0 +1,17 @@
+
+
+;;
+;
+to display:update-display
+  
+  ask patches [set pcolor white]
+  
+  ask cities [
+    ;set size 10 * log city:gdp / setup:max-gdp
+    ;set size (log city:gdp 10) - 5 ; also shitty
+    set size max (list (20 * city:gdp / setup:max-gdp) 1)
+    set color city:country
+  ]
+  
+  
+end

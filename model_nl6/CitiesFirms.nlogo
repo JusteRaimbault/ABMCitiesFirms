@@ -1,5 +1,5 @@
 
-
+extensions [kmeans numanal]
 
 __includes [
   "setup.nls"
@@ -7,19 +7,36 @@ __includes [
   "cities.nls"
   "firms.nls"
 
+  "display.nls"
+
+  "indicators.nls"
+
 ]
 
 
 globals [
+
+  ;;
+  ; setup variables
 
  setup:cities-number
  setup:region-width
  setup:countries-number
 
  ;setup:scaling-exponent
+ setup:max-gdp
+
+ setup:sectors-number
 
 
+  ;;
+  ; runtime variables
 
+  runtime:headless?
+
+
+  runtime:max-gdp
+  runtime:min-gdp
 
 ]
 
@@ -27,6 +44,31 @@ globals [
 breed [cities city]
 
 cities-own [
+
+  ;;
+  ; internal use (rank-size law, matrix indices)
+  city:number
+
+  ;;
+  ; country of the city
+  city:country
+
+  ;;
+  ; GDP of the city
+  ; max value ~ 10^11
+  city:gdp
+
+  ;;
+  ; firm sector composition
+  ; list of size number-of-sectors
+  city:sector-composition
+
+
+  ;;
+  ; internal use (clustering)
+  city:feature
+
+
 
 ]
 @#$#@#$#@
@@ -92,10 +134,10 @@ NIL
 1
 
 SLIDER
-16
-35
-220
-68
+15
+67
+219
+100
 setup:scaling-exponent
 setup:scaling-exponent
 0.5
@@ -105,6 +147,36 @@ setup:scaling-exponent
 1
 NIL
 HORIZONTAL
+
+CHOOSER
+26
+248
+221
+293
+cities:structure-evolution-mode
+cities:structure-evolution-mode
+"fixed" "size-interactions"
+0
+
+CHOOSER
+16
+16
+154
+61
+setup:setup-type
+setup:setup-type
+"synthetic" "real"
+0
+
+CHOOSER
+14
+111
+219
+156
+setup:sector-composition-mode
+setup:sector-composition-mode
+"random" "log-normal"
+0
 
 @#$#@#$#@
 ## WHAT IS IT?

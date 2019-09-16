@@ -3,12 +3,16 @@
 
 to setup:setup
   
+  if runtime:headless? = 0 [clear-all]
+  
   setup:setup-globals
   
   setup:setup-world
   
   setup:setup-cities
   
+  
+  display:update-display
   
 end
 
@@ -18,6 +22,8 @@ to setup:setup-globals
   set setup:cities-number 700
   set setup:region-width 3000
   set setup:countries-number 20
+  set setup:max-gdp (10 ^ 11)
+  set setup:sectors-number 10
   
 end
 
@@ -33,7 +39,19 @@ end
 
 to setup:setup-cities
   
-  create-cities setup:cities-number [cities:new-city]
+  if setup:setup-type = "synthetic" [
+    let i 1
+    create-cities setup:cities-number [cities:new-city i set i i + 1]
+    cities:set-countries-clustering
+    cities:setup-sectors-composition
+  ]
+  
+  
+  
+  ;; TODO
+  if setup:setup-type = "real" [
+    error "unimplemented"
+  ]
   
   
 end
