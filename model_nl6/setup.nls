@@ -1,0 +1,39 @@
+
+
+
+to setup:setup
+  
+  setup:setup-globals
+  
+  setup:setup-world
+  
+  setup:setup-cities
+  
+  
+end
+
+
+to setup:setup-globals
+  
+  set setup:cities-number 700
+  set setup:region-width 3000
+  set setup:countries-number 20
+  
+end
+
+to setup:setup-world
+  ;set-patch-size 600 / setup:region-width
+  ; resize so that distance primitives gives directly the distance ?
+  ;resize-world 0 setup:region-width 0 setup:region-width 
+  ; -> does not work as gives too much patches - distances shall be rescaled by hand
+  set-patch-size 3
+  resize-world 0 200 0 200
+end
+
+
+to setup:setup-cities
+  
+  create-cities setup:cities-number [cities:new-city]
+  
+  
+end
