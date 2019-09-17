@@ -1,6 +1,7 @@
 
 
-
+;;
+; setup
 to setup:setup
   
   if runtime:headless? = 0 [clear-all]
@@ -11,16 +12,34 @@ to setup:setup
   
   setup:setup-cities
   
+  setup:setup-distance-matrices
+  
+  cities:compute-link-utility-matrix
   
   display:update-display
   
+  reset-ticks
+  
+end
+
+to setup:reset
+  ; should reset city value and structure also
+  ask firmlinks [die]
+  random-seed setup:seed
+  cities:compute-link-utility-matrix
+  display:update-display
+  reset-ticks
 end
 
 
 to setup:setup-globals
   
+  random-seed setup:seed
+  
   set setup:cities-number 700
   set setup:region-width 3000
+  set world:distance-rescaling setup:region-width / world-width
+  
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
   set setup:sectors-number 10
@@ -40,7 +59,7 @@ end
 to setup:setup-cities
   
   if setup:setup-type = "synthetic" [
-    let i 1
+    let i 0
     create-cities setup:cities-number [cities:new-city i set i i + 1]
     cities:set-countries-clustering
     cities:setup-sectors-composition
@@ -55,3 +74,50 @@ to setup:setup-cities
   
   
 end
+
+
+;;
+; setup geo dist matrix, sociocultural dist matrix
+to setup:setup-distance-matrices
+  
+  let orderedcities sort-on [city:number] cities
+  
+  let xi matrix:from-row-list (utils:list:rep (map [? -> [xcor] of ?] orderedcities) (length orderedcities))
+  let xj matrix:from-column-list (utils:list:rep (map [? -> [xcor] of ?] orderedcities) (length orderedcities))
+  let yi matrix:from-row-list (utils:list:rep (map [? -> [ycor] of ?] orderedcities) (length orderedcities))
+  let yj matrix:from-column-list (utils:list:rep (map [? -> [ycor] of ?] orderedcities) (length orderedcities))
+  let dxij matrix:minus xi xj let dyij matrix:minus yi yj
+  set cities:geo-distance-matrix matrix:map [? -> world:distance-rescaling * sqrt ?] (matrix:plus (matrix:times-element-wise dxij dxij) (matrix:times-element-wise dyij dyij))
+  
+  let countrynums remove-duplicates [city:country] of cities
+  let centroids table:make
+  foreach countrynums [c -> let xc mean [xcor] of cities with [city:country = c] let yc mean [ycor] of cities with [city:country = c] table:put centroids c (list xc yc)]
+  ; distance between centroids
+  let countrydist table:make
+  foreach countrynums [c1 -> let p1 patch (item 0 table:get centroids c1) (item 1 table:get centroids c1)
+    foreach countrynums [c2 -> let p2 patch (item 0 table:get centroids c2) (item 1 table:get centroids c2)
+      ask p1 [table:put countrydist (list c1 c2) (world:distance-rescaling * distance p2)]
+    ]
+  ]
+  let citycountries map [? -> [city:country] of ?] orderedcities let ci matrix:from-row-list (utils:list:rep citycountries (length orderedcities)) let cj matrix:from-column-list (utils:list:rep citycountries (length orderedcities))
+  set cities:soc-distance-matrix (matrix:map [[c1 c2] -> table:get countrydist (list c1 c2)] ci cj)
+  
+  
+  
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

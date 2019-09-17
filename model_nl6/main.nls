@@ -7,10 +7,14 @@
 ; one time step
 to main:go
   
-  cities:evolve-cities
-  
-  firms:add-linkage
+  if ticks mod runtime:city-evolution-scale = 0 [
+    cities:evolve-cities
+  ]
+    
+  links:add-link
   
   if runtime:headless? = 0 [display:update-display]
+  
+  tick
   
 end

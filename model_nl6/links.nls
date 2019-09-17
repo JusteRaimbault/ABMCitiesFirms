@@ -1,0 +1,72 @@
+
+
+
+
+;;
+; add one link
+to links:add-link
+  let toadd links:link-to-add
+  let i first toadd let j last toadd
+  ask one-of cities with [city:number = i][
+    let d one-of cities with [city:number = j]
+    ifelse out-firmlink-neighbor? d [
+      ask out-firmlink-to d [set firmlink:volume firmlink:volume + 1]
+    ][
+      create-firmlink-to d [links:new-link]
+    ]
+  ]
+  links:update-new-link toadd
+end
+
+
+
+;;
+; Given all possible (directed) couples, draw one randomly
+;  -> best format is cumsum list - updated less than possible : 
+;   * distances normally do not change
+;   * w_ij : one element only updated
+;   * sizes and structures : should add a "temporal scale" = number of linkages between two city evolution time steps
+; 
+;  !!! question of internal links (within cities) a bit escaped : linked to endog growth term in city growth part ?
+to-report links:link-to-add
+  let r random-float 1
+  let stot sum (map sum matrix:to-row-list links:link-utilities-matrix)
+  let s 0 ; note : doing so in unordered way will be much slower in performance - sorting row by city size ?
+  (foreach (matrix:to-row-list links:link-utilities-matrix) (utils:list:seq 0 (count cities - 1) 1) [
+    [row i] ->
+      (foreach row (utils:list:seq 0 (count cities - 1) 1) [
+      [sij j] ->
+      set s s + sij / stot if s > r [report (list i j)]
+    ])
+   ])
+end
+
+
+
+;;
+; only the adjacency matrix is updated
+to links:update-new-link [newlink]
+  matrix:set links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) (matrix:get links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) + 1)
+end
+
+
+
+;;
+; transform the network into an adjacency matrix
+to links:compute-network-adjacency-matrix
+  let orderedcities sort-on [city:number] cities
+  set links:network-adjacency-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0 
+  
+  ask firmlinks [
+    let wij firmlink:volume
+    let o end1 let d end2
+    ask o [let i city:number ask d [let j city:number matrix:set links:network-adjacency-matrix i j ((matrix:get links:network-adjacency-matrix i j) + wij)]]
+  ]
+end
+
+
+
+to links:new-link
+  set thickness 0.1 set color green
+  set firmlink:volume 1
+end

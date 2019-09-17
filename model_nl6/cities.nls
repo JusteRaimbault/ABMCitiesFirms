@@ -11,7 +11,9 @@ to cities:evolve-cities
   
   if cities:structure-evolution-mode = "size-interactions" [
     ; TODO 
-  
+    
+    
+    cities:compute-link-utility-matrix
   ]
   
 end
@@ -55,6 +57,55 @@ end
 
 
 
+;;
+; update link proba list - full update from scratch
+; can use matrices and then flatten
+to cities:compute-link-utility-matrix
+  
+  let orderedcities sort-on [city:number] cities
+  
+  let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let ej matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let etot sum (map [? -> [city:gdp] of ? ] orderedcities)
+  
+  ; possibly previous links
+  links:compute-network-adjacency-matrix
+  let wtot sum (map sum matrix:to-row-list links:network-adjacency-matrix)
+  let w matrix:make-constant (length orderedcities) (length orderedcities) 1
+  if wtot > 0 [set w (matrix:map [? -> (? / wtot) ^ gamma-links] links:network-adjacency-matrix)]
+  
+  ; sector composition
+  cities:compute-sector-proximity-matrix
+  
+  ; utility matrix
+  set links:link-utilities-matrix (matrix:times-element-wise (matrix:map [? -> (? / etot) ^ gamma-origin] ei) (matrix:map [? -> (? / etot) ^ gamma-destination] ej) w (matrix:map [? -> ? ^ gamma-sectors] cities:sectors-proximity-matrix) (matrix:map [? -> exp (- ? / gravity-decay)] cities:geo-distance-matrix) (matrix:map [? -> exp (- ? / country-gravity-decay)] cities:soc-distance-matrix)) 
+  
+  ; flatten as probas ? not even needed - can draw within the matrix !
+
+  ; do not forget to put diag at 0 to avoid self links
+  foreach (utils:list:seq 0 (count cities - 1) 1) [i -> matrix:set links:link-utilities-matrix i i 0]
+
+end
+
+
+
+;;
+; compute and set the global sector proximity matrix between cities
+;  as s_{ij} = \sum_k sik sjk , can use matrix elementwise product and iterate for the sum
+to cities:compute-sector-proximity-matrix
+  let orderedcities sort-on [city:number] cities
+  
+  set cities:sectors-proximity-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0
+  
+  foreach (utils:list:seq 0 (setup:sectors-number - 1) 1) [ k ->
+    let si matrix:from-row-list (utils:list:rep (map [? -> [item k city:sector-composition] of ?] orderedcities) (length orderedcities))
+    let sj matrix:from-column-list (utils:list:rep (map [? -> [item k city:sector-composition] of ?] orderedcities) (length orderedcities))
+    set cities:sectors-proximity-matrix matrix:plus cities:sectors-proximity-matrix (matrix:times-element-wise si sj)
+  ]
+  
+end
+
+
 
 
 ;;
@@ -84,8 +135,9 @@ to-report city:initial-sector-composition
       let sigma2 numanal:Brent-root f 0.0001 100
       let sigma sqrt sigma2 let mu (ln ei) + sigma2
       let lnpdf [x -> 1 / (x * sigma * sqrt (2 * pi)) * exp (- ((ln x - mu)^ 2)/(2 * sigma2))]
-      ;let prevprobas map lnpdf (seq (1 / setup:sectors-number) (setup:sectors-number - 1)
-      
+      let prevprobas map lnpdf (utils:list:seq (1 / setup:sectors-number) 1 (1 / setup:sectors-number))
+      let s sum prevprobas
+      report (map [? -> ? / s] prevprobas)
     ]
     
     
@@ -109,7 +161,7 @@ to cities:new-city [number]
   
   set city:number number
   
-  set city:gdp (setup:max-gdp / (number ^ setup:scaling-exponent))
+  set city:gdp (setup:max-gdp / ((number + 1) ^ setup:scaling-exponent))
   
   ; sector updated later - need boundaries of gdp
   

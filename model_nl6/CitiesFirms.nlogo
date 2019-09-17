@@ -1,15 +1,17 @@
 
-extensions [kmeans numanal]
+extensions [matrix table kmeans numanal]
 
 __includes [
   "setup.nls"
   "main.nls"
   "cities.nls"
-  "firms.nls"
+  "links.nls"
 
   "display.nls"
 
   "indicators.nls"
+
+  "utils/List.nls"
 
 ]
 
@@ -29,6 +31,7 @@ globals [
  setup:sectors-number
 
 
+
   ;;
   ; runtime variables
 
@@ -37,6 +40,24 @@ globals [
 
   runtime:max-gdp
   runtime:min-gdp
+
+  ;;
+  ; cities
+
+  cities:geo-distance-matrix
+  cities:soc-distance-matrix
+  cities:sectors-proximity-matrix
+
+  world:distance-rescaling
+
+
+  links:network-adjacency-matrix
+  ;links:link-proba-list
+  links:link-utilities-matrix
+
+
+
+
 
 ]
 
@@ -71,6 +92,15 @@ cities-own [
 
 
 ]
+
+
+directed-link-breed [firmlinks firmlink]
+
+firmlinks-own [
+
+  firmlink:volume
+
+]
 @#$#@#$#@
 GRAPHICS-WINDOW
 340
@@ -86,8 +116,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 200
@@ -176,7 +206,179 @@ CHOOSER
 setup:sector-composition-mode
 setup:sector-composition-mode
 "random" "log-normal"
+1
+
+PLOT
+1190
+62
+1390
+212
+sectors-distribution
+NIL
+NIL
+0.0
+1.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" ""
+
+BUTTON
+1195
+27
+1299
+60
+hist sectors
+display:hist-sectors
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+18
+312
+190
+345
+gamma-origin
+gamma-origin
 0
+10
+1.0
+0.05
+1
+NIL
+HORIZONTAL
+
+SLIDER
+17
+351
+191
+384
+gamma-destination
+gamma-destination
+0
+10
+1.0
+0.05
+1
+NIL
+HORIZONTAL
+
+SLIDER
+16
+389
+188
+422
+gamma-links
+gamma-links
+0
+10
+1.0
+0.05
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+427
+187
+460
+gamma-sectors
+gamma-sectors
+0
+10
+1.0
+0.05
+1
+NIL
+HORIZONTAL
+
+SLIDER
+14
+463
+186
+496
+gravity-decay
+gravity-decay
+1
+3000
+201.0
+50
+1
+NIL
+HORIZONTAL
+
+SLIDER
+14
+499
+186
+532
+country-gravity-decay
+country-gravity-decay
+1
+3000
+201.0
+50
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+542
+221
+575
+runtime:city-evolution-scale
+runtime:city-evolution-scale
+1
+1000
+491.0
+10
+1
+NIL
+HORIZONTAL
+
+BUTTON
+52
+161
+115
+194
+reset
+setup:reset
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+159
+19
+331
+52
+setup:seed
+setup:seed
+-100000
+100000
+-12102.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
