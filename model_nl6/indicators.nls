@@ -3,3 +3,17 @@
 to indicators:compute-indicators
   
 end
+
+
+
+;;
+; network indicators
+
+to-report indicators:network-weighted-louvain-modularity
+  report 0
+end
+
+
+to-report indicators:network-countries-modularity
+  report 0
+end

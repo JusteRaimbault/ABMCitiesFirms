@@ -1,0 +1,69 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val setupType = Val[String]
+val setupScalingExponent = Val[Double]
+
+val gammaOrigin = Val[Double]
+val gammaDestination = Val[Double]
+val gammaLinks = Val[Double]
+val gammaSectors = Val[Double]
+val gravityDecay = Val[Double]
+val countryGravityDecay = Val[Double]
+
+val networkModularity = Val[Double]
+
+val id = Val[Int]
+val replication = Val[Int]
+
+val cmds = Seq("setup-experiment \"${setupType}\" setupScalingExponent gammaOrigin gammaDestination gammaLinks gammaSectors gravityDecay countryGravityDecay","run-experiment")
+
+val model = NetLogo6Task(workDirectory / "HEADLESS_ABMCitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set(
+    inputs += (setupType,setupScalingExponent,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,gravityDecay,countryGravityDecay,id,replication),
+    outputs += (setupType,setupScalingExponent,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,gravityDecay,countryGravityDecay,id,replication),
+    outputs += networkModularity mapped "indicators:network-weighted-louvain-modularity"
+)
+
+val purpose = "DIRECTSAMPLING_SYNTHETIC_GRID"
+//val purpose = "TEST"
+
+val indics_hook = AppendToCSVFileHook(workDirectory / "exploration" / ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv")
+
+val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+//val env = LocalEnvironment(50)
+
+val replications =
+ Replication (
+   evaluation = (model on env by 30 hook indics_hook),
+   //evaluation = (model on env hook indics_hook),
+   seed = replication,
+   replications = 100
+   //replications = 1
+)
+
+val exploration =
+  DirectSampling(
+    evaluation = replications,
+    sampling = (
+      (
+	      (gravityDecay in (100.0 to 2100.0 by 200.0))
+       x (countryGravityDecay in (200.0 to 1000.0 by 800.0))
+       x ((gammaSectors in (0.05 to 1.0 by 0.05)) :: (gammaSectors in (1.5 to 5.0 by 0.5)))
+       x ((gammaLinks in (0.05 to 1.0 by 0.05)) :: (gammaLinks in (1.5 to 5.0 by 0.5)))
+       x ((gammaOrigin in (0.05 to 1.0 by 0.05)) :: (gammaOrigin in (1.5 to 5.0 by 0.5)))
+       x ((gammaDestination in (0.05 to 1.0 by 0.05)) :: (gammaDestination in (1.5 to 5.0 by 0.5)))
+      )
+      /*LHS(1,
+        gravityDecay in Range(10.0,90.0),
+	      countryGravityDecay in Range(10.0,90.0),
+        gammaSectors in Range(0.0,5.0),
+        gammaLinks in Range(0.0,5.0),
+        gammaOrigin in Range(0.0,5.0),
+        gammaDestination in Range(0.0,5.0)
+      )*/
+         withIndex id )
+         x (setupType is "synthetic")
+  )
+
+
+exploration
