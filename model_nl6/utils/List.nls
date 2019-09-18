@@ -6,7 +6,7 @@
 
 ;;agentset/list functions
 
-to-report to-list [agentset]
+to-report utils:list:to-list [agentset]
   let res []
   ask agentset [
     set res lput self res

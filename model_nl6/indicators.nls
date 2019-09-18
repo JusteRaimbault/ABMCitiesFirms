@@ -1,19 +1,159 @@
 
-
+;;
+;  Possible indicators :
+;   - spatial autocorrelation of links o/d
+;   - spatial autocorrelation of links weights
+;   - entropy of ?
+;   - basic network indicators : density, mean weighted degree, community sizes
 to indicators:compute-indicators
   
+  indicators:setup-network-indicators
+  
+  show (word "countries modularity = " indicators:network-countries-modularity)
+  show (word "Louvain modularity = " indicators:network-weighted-louvain-modularity)
+  show (word "Components number = " indicators:network-components-number)
+  show (word "Degree hierarchy = " indicators:network-degree-distribution-ranksize-exponent)
+  show (word "rho(degree,size) = " indicators:correlation-degree-size)
+  
+  
+  
 end
+
+
 
 
 
 ;;
 ; network indicators
 
-to-report indicators:network-weighted-louvain-modularity
-  report 0
+
+
+;;
+; 
+to indicators:setup-network-indicators
+  nw:set-context cities firmlinks
+  ; may cache shortest paths if betweeness indicators
+  
+  set runtime:communities nw:weighted-louvain-communities "firmlink:volume"
+  
 end
 
 
+
+;;
+; generic rank-size exponent
+to-report indicators:rank-size-hierarchy [x]
+  if max x = 0 and min x = 0 [report [0 0]]
+  let sol matrix:regress matrix:from-column-list (list (map [? -> log ? 10] sort-by [[?1 ?2] -> ?1 >= ?2] x) (map [? -> log ? 10] utils:list:seq 1 length x 1))
+  report (list (last first sol) (first last sol))
+end
+
+
+;;
+; pearson correlation
+to-report indicators:pearson-correlation [x y]
+  let mx mean x let xx map [? -> ? - mx] x let my mean y let yy map [? -> ? - my] y
+  let sx standard-deviation x let sy standard-deviation y
+  if sx = 0 or sy = 0 [report 0]
+  report mean (list-times-element-wise xx yy) / (sx * sy)
+end
+
+
+;;
+; degree distribution properties (in+out)
+to-report indicators:network-degree-distribution-ranksize-exponent
+  let degrees [count firmlink-neighbors] of cities
+  report first indicators:rank-size-hierarchy degrees
+end
+
+;;
+; average weighted degree
+to-report indicators:network-average-weighted-degree
+  let degrees [sum [firmlink:volume] of firmlink-neighbors] of cities
+  report mean degrees
+end
+
+;;
+; average weighted degree
+to-report indicators:network-average-degree
+  let degrees [count firmlink-neighbors] of cities
+  report mean degrees
+end
+
+
+;;
+; average weighted in-degree
+to-report indicators:network-average-weighted-indegree
+  let degrees [sum [firmlink:volume] of in-firmlink-neighbors] of cities
+  report mean degrees
+end
+
+;;
+; average degree
+to-report indicators:network-average-indegree
+  let degrees [count in-firmlink-neighbors] of cities
+  report mean degrees
+end
+
+;;
+; average weighted in-degree
+to-report indicators:network-average-weighted-outdegree
+  let degrees [sum [firmlink:volume] of out-firmlink-neighbors] of cities
+  report mean degrees
+end
+
+;;
+; average degree
+to-report indicators:network-average-outdegree
+  let degrees [count out-firmlink-neighbors] of cities
+  report mean degrees
+end
+
+
+
+
+
+;;
+; correlation degree / size
+to-report indicators:correlation-degree-size
+  let orderedcities sort-on [city:number] cities
+  let degrees map [? -> count [firmlink-neighbors] of ?] orderedcities
+  let sizes map [? -> [city:gdp] of ?] orderedcities
+  report indicators:pearson-correlation degrees sizes
+end
+
+
+
+
+;;
+; modularity of weighted Louvain communities
+to-report indicators:network-weighted-louvain-modularity
+  ; communities reused, computed in main function
+  
+  ; note : the modularity is not weighted ?
+  ;  + should add directed modularity
+  report nw:modularity runtime:communities
+end
+
+
+to-report indicators:network-average-community-size
+  report mean (map length runtime:communities)
+end
+
+
+;;
+; modularity of countries
 to-report indicators:network-countries-modularity
-  report 0
+  let cities-by-country []
+  foreach utils:list:seq 0 (setup:countries-number - 1) 1 [c ->
+    set cities-by-country lput (utils:list:to-list cities with [city:country = c]) cities-by-country
+  ]
+  report nw:modularity cities-by-country
+end
+
+
+;;
+; number of weak connected components
+to-report indicators:network-components-number
+  report length nw:weak-component-clusters
 end
