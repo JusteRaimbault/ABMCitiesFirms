@@ -4,7 +4,7 @@ import java.util.Date
 //val setupType = Val[String] // only synthetic for now
 val setupScalingExponent = Val[Double]
 val setupSectorsNumber = Val[Int]
-val setupSectorsMode = Val[Double]
+val setupSectorsMode = Val[String]
 
 val finalTime = Val[Int]
 
@@ -30,17 +30,18 @@ val flowsEntropy = Val[Double]
 val rhoDegreeSize = Val[Array[Double]]
 val rhoFlowDistancePos = Val[Array[Double]]
 val rhoFlowDistance = Val[Array[Double]]
+val firmLinks = Val[Double]
 
 val id = Val[Int]
 val replication = Val[Int]
 
-val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finaltime} "+
-  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}","run-experiment")
+val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}","experiments:run-experiment")
 
-val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_ABMCitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
-    inputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finaltime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+    inputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
       gravityDecay,countryGravityDecay,id,replication),
-    outputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finaltime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+    outputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
       gravityDecay,countryGravityDecay,id,replication),
     outputs += internationalization mapped "indicators:internationalization",
     outputs += metropolization mapped "indicators:metropolization",
@@ -55,49 +56,64 @@ val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_ABMCitiesFirms.nlog
     outputs += flowsEntropy mapped "indicators:flows-distribution-entropy",
     outputs += rhoDegreeSize mapped "indicators:correlation-degree-size",
     outputs += rhoFlowDistancePos mapped "indicators:correlation-flow-distance true",
-    outputs += rhoFlowDistance mapped "indicators:correlation-flow-distance false"
+    outputs += rhoFlowDistance mapped "indicators:correlation-flow-distance false",
+    outputs += firmLinks mapped "count firmlinks"
 )
 
 //val purpose = "DIRECTSAMPLING_SYNTHETIC_GRID"
-val purpose = "TEST"
+val purpose = "ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID"
+//val purpose = "TEST"
 
-val indics_hook = AppendToCSVFileHook(workDirectory / "exploration" / ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv")
+val indics_hook = CSVHook(workDirectory / "exploration" / (((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv"),arrayOnRow=true)
 
-//val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
-val env = LocalEnvironment(5)
+val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+//val env = LocalEnvironment(5)
 
 val replications = Replication (
-   //evaluation = (model on env by 30 hook indics_hook),
-   evaluation = (model on env hook indics_hook),
+   evaluation = (model on env by 20 hook indics_hook),
+   //evaluation = (model on env hook indics_hook),
    seed = replication,
-   //replications = 100
-   replications = 1
+   replications = 100
+   //replications = 1
 )
 
 val exploration = DirectSampling(
     evaluation = replications,
     sampling = (
-      /*(
-	      (gravityDecay in (100.0 to 2100.0 by 200.0))
-       x (countryGravityDecay in (200.0 to 1000.0 by 800.0))
-       x ((gammaSectors in (0.05 to 1.0 by 0.05)) :: (gammaSectors in (1.5 to 5.0 by 0.5)))
-       x ((gammaLinks in (0.05 to 1.0 by 0.05)) :: (gammaLinks in (1.5 to 5.0 by 0.5)))
-       x ((gammaOrigin in (0.05 to 1.0 by 0.05)) :: (gammaOrigin in (1.5 to 5.0 by 0.5)))
-       x ((gammaDestination in (0.05 to 1.0 by 0.05)) :: (gammaDestination in (1.5 to 5.0 by 0.5)))
-     )*/
-      LHS(1,
-        gravityDecay in Range(10.0,5000.0),
-	      countryGravityDecay in Range(10.0,5000.0),
-        gammaSectors in Range(0.0,5.0),
-        gammaLinks in Range(0.0,5.0),
-        gammaOrigin in Range(0.0,5.0),
-        gammaDestination in Range(0.0,5.0)
+      OneFactorSampling(
+        (gravityDecay in (100.0 to 5100.0 by 200.0)) nominal 500.0,
+        (countryGravityDecay in (100.0 to 5100.0 by 200.0)) nominal 500.0,
+        (gammaSectors in (0.1 to 2.0 by 0.1)) nominal 1.0,
+        (gammaLinks in (0.1 to 2.0 by 0.1)) nominal 1.0,
+        (gammaOrigin in (0.1 to 2.0 by 0.1)) nominal 1.0,
+        (gammaDestination in (0.1 to 2.0 by 0.1)) nominal 1.0
       )
+      /*(
+	   (gravityDecay in (100.0 to 2100.0 by 200.0))
+       //x (countryGravityDecay in (200.0 to 1000.0 by 800.0))
+       x (countryGravityDecay is 200.0)
+       //x ((gammaSectors in (0.05 to 1.0 by 0.05)) :: (gammaSectors in (1.5 to 5.0 by 0.5)))
+       x (gammaSectors is 1.0)
+       //x ((gammaLinks in (0.05 to 1.0 by 0.05)) :: (gammaLinks in (1.5 to 5.0 by 0.5)))
+       x (gammaLinks is 1.0)
+       //x ((gammaOrigin in (0.05 to 1.0 by 0.05)) :: (gammaOrigin in (1.5 to 5.0 by 0.5)))
+       x (gammaOrigin is 1.0)
+       //x ((gammaDestination in (0.05 to 1.0 by 0.05)) :: (gammaDestination in (1.5 to 5.0 by 0.5)))
+       x (gammaDestination is 1.0)
+     )*/
+      /*LHS(5,
+        gravityDecay in Range(10.0,5000.0),
+	    countryGravityDecay in Range(10.0,5000.0),
+        gammaSectors in Range(0.0,2.0),
+        gammaLinks in Range(0.0,2.0),
+        gammaOrigin in Range(0.0,2.0),
+        gammaDestination in Range(0.0,2.0)
+      )*/
          withIndex id )
          x (setupScalingExponent is 1.1)
          x (setupSectorsNumber is 50)
          x (setupSectorsMode is "log-normal")
-         x (finaltime is 1000)
+         x (finalTime is 5000)
 )
 
 

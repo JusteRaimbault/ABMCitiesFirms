@@ -35,7 +35,7 @@ to indicators:compute-indicators
   show (word "rho(degree,size) = " indicators:correlation-degree-size)
   show (word "rho(distance,flow | flow > 0) = " indicators:correlation-flow-distance true)
   show (word "rho(distance,flow) = " indicators:correlation-flow-distance false)
-  
+  show (word "Links " count firmlinks)
   
   
   
@@ -219,6 +219,7 @@ end
 to-report indicators:correlation-flow-distance [non-zero?]
   ifelse non-zero? = true [
   ; this is conditional to having a non zero flow
+    if count firmlinks < 10 [report (list 0 0 0)] ; in too much self-reinforcing cases, not enough links
     let orderedlinks sort-on [(word [city:number] of end1 [city:number] of end2)] firmlinks
     report utils:statistics:pearson-correlation-ci (map [? -> [ln firmlink:volume] of ?] orderedlinks) (map [? -> [link-length] of ?] orderedlinks)
   ][

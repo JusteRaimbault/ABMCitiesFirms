@@ -77,6 +77,7 @@ end
 to-report utils:statistics:pearson-correlation-ci [x y]
   let n length x
   let rho utils:statistics:pearson-correlation x y
+  if length x < 10 [report (list 0 0 0)]
   let rhomin tanh ((atanh rho) - 1.96 / ((sqrt n)*(sqrt (n - 3))))
   let rhomax tanh ((atanh rho) + 1.96 / ((sqrt n)*(sqrt (n - 3))))
   report (list rho rhomin rhomax)
