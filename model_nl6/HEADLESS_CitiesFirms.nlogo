@@ -1,4 +1,3 @@
-
 extensions [matrix table nw kmeans numanal]
 
 __includes [
@@ -25,35 +24,48 @@ globals [
   ;;
   ; setup variables
 
- setup:cities-number
- setup:region-width
- setup:countries-number
+  setup:cities-number
+  setup:region-width
+  setup:countries-number
 
- ;setup:scaling-exponent
- setup:max-gdp
+  setup:max-gdp
 
- ;setup:sectors-number
+  setup:setup-type
+  setup:seed
+  setup:scaling-exponent
+  setup:sectors-number
+  setup:sector-composition-mode
 
+  ;;
+  ; model parameters
+  params:gamma-origin
+  params:gamma-destination
+  params:gamma-links
+  params:gamma-sectors
+  params:gravity-decay
+  params:country-gravity-decay
 
+  ;;
+  ; runtime parameters
+  runtime:headless?
+  runtime:final-time
+  runtime:city-evolution-scale
 
   ;;
   ; runtime variables
-
-  runtime:headless?
-
-
   runtime:max-gdp
   runtime:min-gdp
 
+  ;;
   ; runtime indicator variables
-
   runtime:communities
-
   runtime:failed?
 
 
   ;;
   ; cities
+
+  cities:structure-evolution-mode
 
   cities:geo-distance-matrix
   cities:soc-distance-matrix
@@ -67,6 +79,7 @@ globals [
   links:link-utilities-matrix
 
 
+  display:link-hide-threshold
 
 
 
@@ -141,310 +154,12 @@ ticks
 30.0
 
 BUTTON
-51
-195
-117
-228
-setup
-setup:setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-124
-195
-187
-228
-go
-main:go
-T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-0
-
-SLIDER
-6
-67
-181
-100
-setup:scaling-exponent
-setup:scaling-exponent
-0.5
-2
-1.1
-0.05
-1
-NIL
-HORIZONTAL
-
-CHOOSER
-26
-248
-221
-293
-cities:structure-evolution-mode
-cities:structure-evolution-mode
-"fixed" "size-interactions"
-0
-
-CHOOSER
-16
-16
-154
-61
-setup:setup-type
-setup:setup-type
-"synthetic" "real"
-0
-
-CHOOSER
-14
-111
-219
-156
-setup:sector-composition-mode
-setup:sector-composition-mode
-"random" "log-normal"
-1
-
-PLOT
-1190
-62
-1390
-212
-sectors-distribution
-NIL
-NIL
-0.0
-1.0
-0.0
-1.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" ""
-
-BUTTON
-1195
-27
-1299
-60
-hist sectors
-display:hist-sectors
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-18
-312
-190
-345
-gamma-origin
-gamma-origin
-0
-10
-0.85
-0.05
-1
-NIL
-HORIZONTAL
-
-SLIDER
-17
-351
-191
-384
-gamma-destination
-gamma-destination
-0
-10
-0.95
-0.05
-1
-NIL
-HORIZONTAL
-
-SLIDER
-16
-389
-188
-422
-gamma-links
-gamma-links
-0
-10
-0.0
-0.05
-1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-427
-187
-460
-gamma-sectors
-gamma-sectors
-0
-10
-0.0
-0.05
-1
-NIL
-HORIZONTAL
-
-SLIDER
-14
-463
-186
-496
-gravity-decay
-gravity-decay
-1
-3000
-2951.0
-50
-1
-NIL
-HORIZONTAL
-
-SLIDER
-14
-499
-186
-532
-country-gravity-decay
-country-gravity-decay
-1
-50000
-49951.0
-50
-1
-NIL
-HORIZONTAL
-
-SLIDER
-12
-542
-221
-575
-runtime:city-evolution-scale
-runtime:city-evolution-scale
-1
-1000
-491.0
-10
-1
-NIL
-HORIZONTAL
-
-BUTTON
-52
-161
-115
-194
-reset
-setup:reset
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-159
-19
-331
-52
-setup:seed
-setup:seed
--100000
-100000
--12111.0
-1
-1
-NIL
-HORIZONTAL
-
-BUTTON
-1199
-243
-1293
-276
-indicators
-indicators:compute-indicators
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SLIDER
-182
-67
-339
-100
-setup:sectors-number
-setup:sectors-number
-0
-100
-50.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-1129
-311
-1355
-344
-display:link-hide-threshold
-display:link-hide-threshold
-0
-1
-0.95
-0.05
-1
-NIL
-HORIZONTAL
-
-BUTTON
-1132
-353
-1235
-386
-toggle links
-display:toggle-links
+70
+66
+198
+99
+test experiment
+experiments:test-experiment
 NIL
 1
 T

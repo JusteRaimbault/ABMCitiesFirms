@@ -65,20 +65,20 @@ to cities:compute-link-utility-matrix
   let orderedcities sort-on [city:number] cities
   
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
-  let ej matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let etot sum (map [? -> [city:gdp] of ? ] orderedcities)
   
   ; possibly previous links
   links:compute-network-adjacency-matrix
   let wtot sum (map sum matrix:to-row-list links:network-adjacency-matrix)
   let w matrix:make-constant (length orderedcities) (length orderedcities) 1
-  if wtot > 0 [set w (matrix:map [? -> (? / wtot) ^ gamma-links] links:network-adjacency-matrix)]
+  if wtot > 0 [set w (matrix:map [? -> (? / wtot) ^ params:gamma-links] links:network-adjacency-matrix)]
   
   ; sector composition
   cities:compute-sector-proximity-matrix
   
   ; utility matrix
-  set links:link-utilities-matrix (matrix:times-element-wise (matrix:map [? -> (? / etot) ^ gamma-origin] ei) (matrix:map [? -> (? / etot) ^ gamma-destination] ej) w (matrix:map [? -> ? ^ gamma-sectors] cities:sectors-proximity-matrix) (matrix:map [? -> exp (- ? / gravity-decay)] cities:geo-distance-matrix) (matrix:map [? -> exp (- ? / country-gravity-decay)] cities:soc-distance-matrix)) 
+  set links:link-utilities-matrix (matrix:times-element-wise (matrix:map [? -> (? / etot) ^ params:gamma-origin] ei) (matrix:map [? -> (? / etot) ^ params:gamma-destination] ej) w (matrix:map [? -> ? ^ params:gamma-sectors] cities:sectors-proximity-matrix) (matrix:map [? -> exp (- ? / params:gravity-decay)] cities:geo-distance-matrix) (matrix:map [? -> exp (- ? / params:country-gravity-decay)] cities:soc-distance-matrix)) 
   
   ; flatten as probas ? not even needed - can draw within the matrix !
 
@@ -166,3 +166,11 @@ to cities:new-city [number]
   ; sector updated later - need boundaries of gdp
   
 end
+
+
+;;
+; weighted degree of a city
+to-report city:weighted-degree
+  report sum [firmlink:volume] of my-firmlinks
+end
+

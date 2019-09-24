@@ -1,20 +1,38 @@
 
 
+
+;;
+;
+to display:setup-display
+  
+  display:update-display
+  
+  ; patches do not change color
+  ask patches [set pcolor [item (city:country mod length base-colors) base-colors] of one-of cities with-min [distance myself]]
+end
+
+
 ;;
 ;
 to display:update-display
   
-  ;ask patches [set pcolor white]
-  
+
+  let mi min [log city:gdp 10] of cities let ma max [log city:gdp 10] of cities
   ask cities [
-    ;set size 10 * log city:gdp / setup:max-gdp
+    set size 10 * (log city:gdp 10 - mi)/(ma - mi)
     ;set size (log city:gdp 10) - 5 ; also shitty
-    set size max (list (20 * city:gdp / setup:max-gdp) 1)
-    set color item (city:country mod length base-colors) base-colors
+    ;set size max (list (20 * city:gdp / setup:max-gdp) 1)
+    ;set color item (city:country mod length base-colors) base-colors
+    set color black
   ]
   
+  ifelse count firmlinks > 0 [set ma max [firmlink:volume] of firmlinks][set ma 0]
   ask firmlinks [
-    set thickness firmlink:volume / 10 
+    ifelse ma < 30 [
+      set thickness firmlink:volume / 10 
+    ][
+      set thickness 3 * firmlink:volume / ma
+    ]
   ]
   
 end
@@ -26,5 +44,18 @@ to display:hist-sectors
     (foreach city:sector-composition (utils:list:seq (1 / length city:sector-composition) 1 (1 / length city:sector-composition)) [[y x] ->
     plotxy x y
   ])
+  ]
+end
+
+
+
+;;
+;
+to display:toggle-links
+  ifelse count firmlinks with [hidden? = true] > 0 [
+    ask firmlinks [set hidden? false] 
+  ][
+    let q utils:statistics:quantile ([firmlink:volume] of firmlinks) display:link-hide-threshold
+    ask firmlinks with [firmlink:volume <= q][set hidden? true]
   ]
 end

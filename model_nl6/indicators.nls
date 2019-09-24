@@ -5,15 +5,37 @@
 ;   - spatial autocorrelation of links weights
 ;   - entropy of ?
 ;   - basic network indicators : density, mean weighted degree, community sizes
+;   - need an indicator of "centralization" = "how the big cities get everything" (mmetropolization ?) -> kind of captured by the correlation size / degree ? yet but not weighetd by size in particular
+;   - TODO for modularity: randomization (of communities / countries ?)
+;   - cycles / paths / distance between cities ?
+;   - some in time ? : relevant in a co-evolution context
+;   - ref network: proximity network - adjacency as proximity matrix only
+;
+;   TODO: revisit indicators when switch to co-evolution model (cities evolving)
 to indicators:compute-indicators
   
   indicators:setup-network-indicators
   
-  show (word "countries modularity = " indicators:network-countries-modularity)
+  ; geographical indicators
+  show (word "internationalization = " indicators:internationalization)
+  show (word "metropolization = " indicators:metropolization)
+  show (word "regionalization = " indicators:regionalization 10)
+  show (word "specialization = " indicators:specialization 10)
+  
+  ; other indicators
+  ; show (word "countries modularity = " indicators:network-countries-modularity) = internationalization
   show (word "Louvain modularity = " indicators:network-weighted-louvain-modularity)
-  show (word "Components number = " indicators:network-components-number)
-  show (word "Degree hierarchy = " indicators:network-degree-distribution-ranksize-exponent)
+  show (word "Avg community size = " indicators:network-average-community-size)
+  show (word "Degree hierarchy = " indicators:network-weighted-degree-distribution-ranksize)
+  show (word "Avg weighted degree = " indicators:network-average-weighted-degree)
+  show (word "Degree entropy = " indicators:network-weighted-degree-distribution-entropy)
+  show (word "Flows hierarchy = " indicators:flows-distribution-ranksize)
+  ; avg flow does not make real sense as absolute value depends on parameters ; a normalized value compared to a null model (d = +\infty for example) could be a solution
+  show (word "Flows entropy" indicators:flows-distribution-entropy)
   show (word "rho(degree,size) = " indicators:correlation-degree-size)
+  show (word "rho(distance,flow | flow > 0) = " indicators:correlation-flow-distance true)
+  show (word "rho(distance,flow) = " indicators:correlation-flow-distance false)
+  
   
   
   
@@ -29,7 +51,7 @@ end
 
 
 ;;
-; 
+; network preprocessing
 to indicators:setup-network-indicators
   nw:set-context cities firmlinks
   ; may cache shortest paths if betweeness indicators
@@ -40,36 +62,104 @@ end
 
 
 
+
+
+
+
 ;;
-; generic rank-size exponent
-to-report indicators:rank-size-hierarchy [x]
-  if max x = 0 and min x = 0 [report [0 0]]
-  let sol matrix:regress matrix:from-column-list (list (map [? -> log ? 10] sort-by [[?1 ?2] -> ?1 >= ?2] x) (map [? -> log ? 10] utils:list:seq 1 length x 1))
-  report (list (last first sol) (first last sol))
+; internationalization as links between countries
+to-report indicators:internationalization
+  report indicators:network-countries-modularity
+end
+
+;;
+; metropolization as deviation from expected flows as function of size only
+to-report indicators:metropolization
+  let orderedcities sort-on [city:number] cities
+  let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let etot sum (map [? -> [city:gdp] of ? ] orderedcities)
+  let expected-flows-matrix matrix:times-element-wise (matrix:map [? -> (? / etot)^ params:gamma-origin] ei) (matrix:map [? -> (? / etot)^ params:gamma-destination] ej) 
+  let expflowtot sum map sum matrix:to-row-list expected-flows-matrix
+  let totalvolume sum map sum matrix:to-row-list links:network-adjacency-matrix ;should also be ticks
+  let diffs (matrix:map [[phi1 phi2] -> (phi1 / expflowtot - phi2 / totalvolume)^ 2] expected-flows-matrix links:network-adjacency-matrix)
+  report (sum map sum matrix:to-row-list diffs)/((count cities)*(count cities - 1))
 end
 
 
 ;;
-; pearson correlation
-to-report indicators:pearson-correlation [x y]
-  let mx mean x let xx map [? -> ? - mx] x let my mean y let yy map [? -> ? - my] y
-  let sx standard-deviation x let sy standard-deviation y
-  if sx = 0 or sy = 0 [report 0]
-  report mean (list-times-element-wise xx yy) / (sx * sy)
+; correlation between distance and flow ; decomposed into size classes
+;  - symmmetrize the matrix; classify by sum of both ends
+;  - how many classes ? the correlation estimation should stay consistent - if ~10,000 links, estimation on 1000 should be fine
+;  ! depending 
+to-report indicators:regionalization [quantiles]
+  let symmetrized-log-adjacency matrix:map genlog (matrix:plus links:network-adjacency-matrix (matrix:transpose links:network-adjacency-matrix))
+  let orderedcities sort-on [city:number] cities
+  let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let cumsizes (matrix:plus ei ej)
+  ; ! to estimate correlations we must take half of matrices only (to avoid artificial good fitting)
+  let flatdists utils:matrix:get-flatten-strict-upper-rows cities:geo-distance-matrix
+  let flatlogflows utils:matrix:get-flatten-strict-upper-rows symmetrized-log-adjacency
+  let flatcumsizes utils:matrix:get-flatten-strict-upper-rows cumsizes
+  report indicators:correlation-by-quantile flatdists flatlogflows flatcumsizes quantiles
 end
+
+
+
+;;
+; correlation between specialization and flow by size quantiles
+to-report indicators:specialization [quantiles]
+  let orderedcities sort-on [city:number] cities
+  let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities)) ; TODO used quite a lot of times, should set as global
+  let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
+  let cumsizes (matrix:plus ei ej)
+  ; ! to estimate correlations we must take half of matrices only (to avoid artificial good fitting)
+  let flatdists utils:matrix:get-flatten-strict-upper-rows cities:geo-distance-matrix
+  let flatsims utils:matrix:get-flatten-strict-upper-rows cities:sectors-proximity-matrix
+  let flatcumsizes utils:matrix:get-flatten-strict-upper-rows cumsizes
+  report indicators:correlation-by-quantile flatdists flatsims flatcumsizes quantiles
+end
+
+
+;;
+; x y z must be already consistent flat lists
+to-report indicators:correlation-by-quantile [x y z quantiles]
+  let q fput 0 map [qq -> utils:statistics:quantile z qq] (utils:list:seq (1 / quantiles) 1 (1 / quantiles))
+  ;let flatdata utils:list:zip (utils:list:zip x y) z
+  let flatdata utils:list:zip (utils:list:seq 0 (length z - 1) 1) z
+  let res []
+  foreach (utils:list:seq 1 (length q - 1) 1) [i ->
+    ;let u utils:list:unzip first (utils:list:unzip (filter [? -> last ? > item (i - 1) q and last ? <= item i q] flatdata))
+    ;show (item (i - 1) q) show (item i q) show u
+    ; note : zip/unzip are not optimized-> makes a O(|x|) but with a large constant - better get the indices and map on x y
+    let inds first (utils:list:unzip (filter [? -> last ? > item (i - 1) q and last ? <= item i q] flatdata)) ; quite similar finally
+    ;set res lput (utils:statistics:pearson-correlation-ci first u last u) res
+    set res lput (utils:statistics:pearson-correlation-ci (map [k -> item k x] inds) (map [k -> item k y] inds)) res
+  ]
+  report res
+end
+
 
 
 ;;
 ; degree distribution properties (in+out)
-to-report indicators:network-degree-distribution-ranksize-exponent
-  let degrees [count firmlink-neighbors] of cities
-  report first indicators:rank-size-hierarchy degrees
+to-report indicators:network-weighted-degree-distribution-ranksize
+  let degrees [city:weighted-degree] of cities
+  report utils:statistics:rank-size-hierarchy degrees
 end
+
+
+to-report indicators:network-weighted-degree-distribution-entropy
+  let degrees [city:weighted-degree] of cities
+  report utils:statistics:entropy degrees
+end
+
 
 ;;
 ; average weighted degree
 to-report indicators:network-average-weighted-degree
-  let degrees [sum [firmlink:volume] of firmlink-neighbors] of cities
+  let degrees [city:weighted-degree] of cities
   report mean degrees
 end
 
@@ -115,15 +205,49 @@ end
 
 ;;
 ; correlation degree / size
+;  done on logs
 to-report indicators:correlation-degree-size
   let orderedcities sort-on [city:number] cities
-  let degrees map [? -> count [firmlink-neighbors] of ?] orderedcities
-  let sizes map [? -> [city:gdp] of ?] orderedcities
-  report indicators:pearson-correlation degrees sizes
+  let degrees map [? -> genlog count [firmlink-neighbors] of ?] orderedcities
+  let sizes map [? -> [ln city:gdp] of ?] orderedcities
+  report utils:statistics:pearson-correlation-ci degrees sizes
+end
+
+
+;;
+; correlation between flow and distance
+to-report indicators:correlation-flow-distance [non-zero?]
+  ifelse non-zero? = true [
+  ; this is conditional to having a non zero flow
+    let orderedlinks sort-on [(word [city:number] of end1 [city:number] of end2)] firmlinks
+    report utils:statistics:pearson-correlation-ci (map [? -> [ln firmlink:volume] of ?] orderedlinks) (map [? -> [link-length] of ?] orderedlinks)
+  ][
+    ; else should work with the full matrix
+    let dists utils:list:flatten matrix:to-row-list cities:geo-distance-matrix
+    let flows utils:list:flatten matrix:to-row-list (matrix:map genlog links:network-adjacency-matrix)
+    report utils:statistics:pearson-correlation-ci dists flows
+  ]
+end
+
+to-report genlog [x]
+  ifelse x = 0 [report 0][report ln x]
 end
 
 
 
+;;
+; hierarchy of flows
+to-report indicators:flows-distribution-ranksize
+  ; filter on > 0 anyway in the ranksize estimation
+  report utils:statistics:rank-size-hierarchy [firmlink:volume] of firmlinks
+end
+
+
+;;
+; entropy of flows
+to-report indicators:flows-distribution-entropy
+  report utils:statistics:entropy [firmlink:volume] of firmlinks
+end
 
 ;;
 ; modularity of weighted Louvain communities
@@ -136,8 +260,10 @@ to-report indicators:network-weighted-louvain-modularity
 end
 
 
+;;
+;
 to-report indicators:network-average-community-size
-  report mean (map length runtime:communities)
+  report mean (map count runtime:communities)
 end
 
 
@@ -146,14 +272,16 @@ end
 to-report indicators:network-countries-modularity
   let cities-by-country []
   foreach utils:list:seq 0 (setup:countries-number - 1) 1 [c ->
-    set cities-by-country lput (utils:list:to-list cities with [city:country = c]) cities-by-country
+    set cities-by-country lput (cities with [city:country = c]) cities-by-country
   ]
   report nw:modularity cities-by-country
 end
 
 
 ;;
-; number of weak connected components
-to-report indicators:network-components-number
-  report length nw:weak-component-clusters
-end
+; number of weak connected components -> remove single cities ?
+;  + does not make real sense as depends on final time - no zero proba so all links are theoretically realized
+;  -> not useful
+;to-report indicators:network-components-number
+;  report length nw:weak-component-clusters
+;end

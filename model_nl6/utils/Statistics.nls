@@ -1,0 +1,100 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic Stat functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+to-report utils:statistics:summary [x]
+  report (word "length = " length x "\n mean = " mean x "\n median = " median x "\n min = " min x "\n max = " max x)
+end
+
+
+; histogram retrieving count list
+; nbreaks = number of segments
+; reports counts
+to-report utils:statistics:hist [x nbreaks]
+  ifelse x != [] [
+  let counts utils:list:rep 0 nbreaks
+  let m min x let ma max x
+  foreach x [
+      ? -> 
+    let index floor ((? - m)/(ma - m)*(nbreaks - 1))
+    set counts replace-item index counts (item index counts + 1)
+  ]
+  
+  report counts
+  ][
+    report []
+  ]
+end
+
+
+
+; quantile function
+to-report utils:statistics:quantile [x q]
+  if length x = 0 [report 0]
+  report item (floor (q * length x)) (sort x)
+end
+
+
+
+
+;;
+; generic rank-size exponent and r-squared
+to-report utils:statistics:rank-size-hierarchy [x]
+  if max x = 0 and min x = 0 [report [0 0]]
+  let xx remove 0 x
+  let sol matrix:regress matrix:from-column-list (list (map [? -> log ? 10] sort-by [[?1 ?2] -> ?1 > ?2] xx) (map [? -> log ? 10] utils:list:seq 1 length xx 1))
+  report (list (last first sol) (first last sol))
+end
+
+
+
+;;
+; entropy for x >= 0
+to-report utils:statistics:entropy [x] 
+  let xx remove 0 x
+  let xtot sum xx
+  if xtot = 0 [report 0]
+  report (- 1 / (ln length x) * sum (map [? -> ? / xtot * ln (? / xtot)] xx))
+end
+
+
+
+
+;;
+; pearson correlation
+to-report utils:statistics:pearson-correlation [x y]
+  let mx mean x let xx map [? -> ? - mx] x let my mean y let yy map [? -> ? - my] y
+  let sx standard-deviation x let sy standard-deviation y
+  if sx = 0 or sy = 0 [report 0]
+  report mean (utils:list:times-element-wise xx yy) / (sx * sy)
+end
+
+
+;;
+; note : not sure the netlogo standard-dev primitive use the biased or unbiased estimator of variance - should not change much
+; defaults at 95% confidence level
+to-report utils:statistics:pearson-correlation-ci [x y]
+  let n length x
+  let rho utils:statistics:pearson-correlation x y
+  let rhomin tanh ((atanh rho) - 1.96 / ((sqrt n)*(sqrt (n - 3))))
+  let rhomax tanh ((atanh rho) + 1.96 / ((sqrt n)*(sqrt (n - 3))))
+  report (list rho rhomin rhomax)
+end
+
+to-report tanh [z] 
+  report  (exp (2 * z) - 1)/(exp (2 * z) + 1)
+end
+
+to-report atanh [r]
+  report 0.5 * ln ((1 + r)/(1 - r))
+end
+  
+;;
+; covariance
+;  cov(X,Y) = E(xy)-E(x)E(y)
+to-report utils:statistics:covariance [x y]
+  report (mean utils:list:times-element-wise x y) - (mean x * mean y)
+end
+
+

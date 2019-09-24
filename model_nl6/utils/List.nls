@@ -17,7 +17,7 @@ end
 
 ;;
 ; list to agentset - beware, O(n_agents*length(list))
-to-report to-agentset [l]
+to-report utils:list:to-agentset [l]
   if length l = 0 [report nobody]
   if is-turtle? first l [report turtles with [member? self l]]
   if is-patch? first l [report patches with [member? self l]]
@@ -30,7 +30,7 @@ end
 ;
 ; @param p \in [1,\infty[
 ; @param l
-to-report norm-p [p l]
+to-report utils:list:norm-p [p l]
   let res 0
   let n length l
   foreach l [? -> set res res + (? ^ p)]
@@ -69,14 +69,14 @@ end
 ; @param i index of counter
 ; @param l list of counters
 ; @param val increment by this value
-to-report incr-item [i l val]
+to-report utils:list:incr-item [i l val]
   report replace-item i l (item i l + val)
 end
 
 
 ;;
 ; concatenate a list of lists
-to-report concatenate [lists]
+to-report utils:list:concatenate [lists]
   let res []
   foreach lists [? ->
     foreach ? [?2 ->
@@ -88,8 +88,47 @@ end
 
 
 ;;
+; flatten a multidimensional list - rq: not sure it is done the same way than scala
+to-report utils:list:flatten [multidim-list]
+  if length multidim-list = 0 [report []]
+  ifelse not is-list? item 0 multidim-list [
+    report multidim-list
+  ][
+     ; first concatenate and then recurse
+    let conc utils:list:concatenate multidim-list
+    if length conc = 0 [report []] ; flattening a list of empty lists gives empty list
+    ifelse is-list? item 0 conc [
+      report utils:list:flatten conc
+    ][
+      report conc
+    ]
+  ]
+end
+
+;;
+;
+to-report utils:list:zip [l1 l2]
+  let res []
+  (foreach l1 l2 [[x1 x2] ->
+    set res lput (list x1 x2) res
+  ])
+  report res
+end
+
+;;
+; assumes l = [[x1,y1],...,[xn,yn]]
+to-report utils:list:unzip [l]
+  let x [] let y []
+  foreach l [z ->
+    set x lput first z x set y lput last z y
+  ]
+  report (list x y)
+end
+  
+
+;;
 ; reverse image of a list
-to-report rev [l]
+to-report utils:list:rev [l]
   let res []
   foreach l [
     ? ->
@@ -105,7 +144,7 @@ end
 ;;;;;;;;;;
 
 ; note : would be better to report \infty for gen-min (generally used for comparisons) but does not exists
-to-report gen-min [l]
+to-report utils:list:gen-min [l]
   ifelse length l = 0 [
     report 0
   ][
@@ -113,7 +152,7 @@ to-report gen-min [l]
   ]
 end
 
-to-report gen-max [l]
+to-report utils:list:gen-max [l]
   ifelse length l = 0 [
     report 0
   ][
@@ -121,7 +160,7 @@ to-report gen-max [l]
   ]
 end
 
-to-report gen-sum [l]
+to-report utils:list:gen-sum [l]
   ifelse length l = 0 [
     report 0
   ][
@@ -129,7 +168,7 @@ to-report gen-sum [l]
   ]
 end
 
-to-report gen-mean [l]
+to-report utils:list:gen-mean [l]
   ifelse length l = 0 [
     report 0
   ][
@@ -146,7 +185,7 @@ end
 
 ;;
 ; reports index of min (last in case of multiple)
-to-report list:min-index [l]
+to-report utils:list:min-index [l]
   let mi first l let res 0 let rem but-first l let i 1
   while [length rem > 0][
     if first rem <= mi [set mi first rem set res i]
@@ -158,7 +197,7 @@ end
 
 ;;
 ; index of max
-to-report list:max-index [l]
+to-report utils:list:max-index [l]
   let ma first l let res 0 let rem but-first l let i 1
   while [length rem > 0][
     if first rem >= ma [set ma first rem set res i]
@@ -178,7 +217,7 @@ end
 ;;
 ; Computes scalar product between two lists
 ;  if different lengths, take minimum
-to-report list:scalar-product [l1 l2]
+to-report utils:list:scalar-product [l1 l2]
   let res 0
   let n min list (length l1) (length l2) let i 0
   repeat n [
@@ -198,7 +237,7 @@ end
 ; Multiplies two lists element-wise
 ;
 ; same length not necessarily required, will return shortest list size.
-to-report list-times-element-wise [l1 l2]
+to-report utils:list:times-element-wise [l1 l2]
   let res []
   let i 0
   let shortest [] let longest [] ifelse length l1 < length l2 [set shortest l1 set longest l2][set shortest l2 set longest l1]
@@ -213,7 +252,7 @@ end
 
 
 
-to-report list:plus [l1 l2]
+to-report utils:list:plus [l1 l2]
   let res [] let i 0
   foreach l1 [
     ? ->
@@ -222,7 +261,7 @@ to-report list:plus [l1 l2]
   report res
 end
 
-to-report list:minus [l1 l2]
+to-report utils:list:minus [l1 l2]
   let res [] let i 0
   foreach l1 [
     ? ->

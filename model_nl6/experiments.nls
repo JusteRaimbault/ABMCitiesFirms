@@ -1,0 +1,60 @@
+
+;;
+; experiments
+
+
+
+;;
+; setup experiment
+;  by default synthetic and fixed cities for now
+to experiments:setup-experiment [synth-scaling-exponent synth-sectors-number synth-sectors-mode finaltime gamma-origin gamma-destination gamma-links gamma-sectors gravity-decay country-gravity-decay seed]
+  
+  
+  
+  ca
+  
+  set runtime:headless? true
+  
+  setup:setup-headless
+  
+  ; override or set globals
+  set setup:seed seed
+  
+  set setup:scaling-exponent synth-scaling-exponent ; \in [0.5, 2.0]
+  set setup:sectors-number synth-sectors-number ; \in {5,100}
+  set setup:sector-composition-mode synth-sectors-mode ; "log-normal" or "random"
+  
+  set runtime:final-time finaltime ; TODO investigate the stationary solution - fixed point ?
+  
+  set params:gamma-origin gamma-origin ; \in [0.0,10.0]
+  set params:gamma-destination gamma-destination ; \in [0.0,10.0]
+  set params:gamma-links gamma-links ; \in [0.0,10.0]
+  set params:gamma-sectors gamma-sectors ; \in [0.0,10.0]
+  set params:gravity-decay gravity-decay ; \in [1.0,10000.0]
+  set params:country-gravity-decay country-gravity-decay ; \in [1.0,10000.0]
+  
+  setup:setup
+  
+end
+
+
+;;
+; run experiment
+to experiments:run-experiment
+  carefully[
+    main:go-full-period
+  ][
+    print error-message
+    set runtime:failed? true
+  ]
+  indicators:setup-network-indicators
+end
+
+
+;;
+; test 
+to experiments:test-experiment
+  experiments:setup-experiment 1.1 50 "log-normal" 500 1.0 1.0 1.0 1.0 200.0 200.0 (random 10000)
+  experiments:run-experiment
+  indicators:compute-indicators
+end

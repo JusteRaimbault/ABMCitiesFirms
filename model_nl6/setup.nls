@@ -16,22 +16,31 @@ to setup:setup
   
   cities:compute-link-utility-matrix
   
-  display:update-display
-  
+  if runtime:headless? = 0 [
+    display:setup-display
+  ]
+    
   reset-ticks
   
 end
 
+;;
+; keep the same spatial configuration but reset the network
 to setup:reset
   ; should reset city value and structure also
   ask firmlinks [die]
   random-seed setup:seed
+  ; recompute utilities
   cities:compute-link-utility-matrix
-  display:update-display
+  if runtime:headless? = 0 [
+    display:update-display
+  ]
   reset-ticks
 end
 
 
+;;
+; globals
 to setup:setup-globals
   
   random-seed setup:seed
@@ -42,10 +51,29 @@ to setup:setup-globals
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
-  set setup:sectors-number 10
   
 end
 
+
+;;
+; setup default headless variables
+to setup:setup-headless
+  set setup:setup-type "synthetic"
+  
+  set setup:scaling-exponent 1.1
+  set setup:sectors-number 50
+  
+  set runtime:final-time 1000
+  
+  set setup:sector-composition-mode "log-normal"
+  
+  set cities:structure-evolution-mode "fixed"
+  
+  set runtime:city-evolution-scale 10000.0 ; fixed anyway
+  
+end
+  
+  
 to setup:setup-world
   ;set-patch-size 600 / setup:region-width
   ; resize so that distance primitives gives directly the distance ?
@@ -78,6 +106,8 @@ end
 
 ;;
 ; setup geo dist matrix, sociocultural dist matrix
+;
+;  - socio-cult distance matrix is set as geo distance between centroids for now
 to setup:setup-distance-matrices
   
   let orderedcities sort-on [city:number] cities
@@ -105,6 +135,9 @@ to setup:setup-distance-matrices
   
   
 end
+
+
+
 
 
 

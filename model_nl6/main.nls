@@ -5,9 +5,15 @@
 
 ;;
 ; one time step
+;
+;  TODO
+;   - investigate dynamics vs stationary
+;   - implement switch links / degree driven path dep
+;   - indicators of path-dep ?
+;   - implement copula for data driven version and compare both
 to main:go
   
-  if ticks mod runtime:city-evolution-scale = 0 [
+  if ticks mod runtime:city-evolution-scale = 0 and ticks > 0 [
     cities:evolve-cities
   ]
     
@@ -17,4 +23,14 @@ to main:go
   
   tick
   
+end
+
+
+;;
+; 
+to main:go-full-period
+  repeat runtime:final-time [
+    ;show ticks
+    main:go
+  ]
 end

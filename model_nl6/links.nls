@@ -67,6 +67,6 @@ end
 
 
 to links:new-link
-  set thickness 0.1 set color green
+  set thickness 0.1 set color black;set color green
   set firmlink:volume 1
 end
