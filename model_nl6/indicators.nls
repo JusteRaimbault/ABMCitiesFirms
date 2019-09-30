@@ -158,6 +158,7 @@ end
 
 ;;
 ; average weighted degree
+;  this is stupid - taking weighted degree as sum gives a constant value for this indicator
 to-report indicators:network-average-weighted-degree
   let degrees [city:weighted-degree] of cities
   report mean degrees

@@ -1,4 +1,3 @@
-
 extensions [matrix table nw kmeans numanal]
 
 __includes [
@@ -51,6 +50,7 @@ globals [
 
   runtime:failed?
 
+  runtime:final-time
 
   ;;
   ; cities
@@ -257,13 +257,13 @@ NIL
 SLIDER
 18
 312
-190
+221
 345
-gamma-origin
-gamma-origin
+params:gamma-origin
+params:gamma-origin
 0
 10
-0.85
+0.0
 0.05
 1
 NIL
@@ -272,13 +272,13 @@ HORIZONTAL
 SLIDER
 17
 351
-191
+252
 384
-gamma-destination
-gamma-destination
+params:gamma-destination
+params:gamma-destination
 0
 10
-0.95
+0.0
 0.05
 1
 NIL
@@ -287,10 +287,10 @@ HORIZONTAL
 SLIDER
 16
 389
-188
+211
 422
-gamma-links
-gamma-links
+params:gamma-links
+params:gamma-links
 0
 10
 0.0
@@ -302,13 +302,13 @@ HORIZONTAL
 SLIDER
 15
 427
-187
+227
 460
-gamma-sectors
-gamma-sectors
+params:gamma-sectors
+params:gamma-sectors
 0
 10
-0.0
+0.2
 0.05
 1
 NIL
@@ -317,13 +317,13 @@ HORIZONTAL
 SLIDER
 14
 463
-186
+210
 496
-gravity-decay
-gravity-decay
+params:gravity-decay
+params:gravity-decay
 1
 3000
-2951.0
+500.0
 50
 1
 NIL
@@ -332,13 +332,13 @@ HORIZONTAL
 SLIDER
 14
 499
-186
+273
 532
-country-gravity-decay
-country-gravity-decay
+params:country-gravity-decay
+params:country-gravity-decay
 1
 50000
-49951.0
+2100.0
 50
 1
 NIL
@@ -353,7 +353,7 @@ runtime:city-evolution-scale
 runtime:city-evolution-scale
 1
 1000
-491.0
+10000.0
 10
 1
 NIL
@@ -385,7 +385,7 @@ setup:seed
 setup:seed
 -100000
 100000
--12111.0
+1.388528261E9
 1
 1
 NIL
@@ -432,7 +432,7 @@ display:link-hide-threshold
 display:link-hide-threshold
 0
 1
-0.95
+0.0
 0.05
 1
 NIL
