@@ -160,6 +160,9 @@ for(indicator in indicators){
 # same but fixed gammaLinks (close to no effect -> need to change that process)
 # or can we do a large number enough of simulations to see a significant effect ? -> interesting exercize !
 
+#sres$gammaOriginString = sapply(sres$gammaOrigin,function(s){expression(gamma[F]*"="*s)})
+sres$gammaOriginString = paste0("gamma_F=",sres$gammaOrigin)
+
 for(countryGravityDecay in unique(res$countryGravityDecay)){
   for(gammaDestination in unique(res$gammaDestination)){
     d = sres[sres$countryGravityDecay==countryGravityDecay&sres$gammaDestination==gammaDestination&sres$gammaLinks==0,]
@@ -167,7 +170,8 @@ for(countryGravityDecay in unique(res$countryGravityDecay)){
       g=ggplot(d,aes_string(x='gravityDecay',y=indicator,group='gammaSectors',color='gammaSectors'))
       g+geom_point()+geom_line()+geom_errorbar(aes_string(ymin=paste0(indicator,"-",indicator,"Sd"),ymax=paste0(indicator,"+",indicator,"Sd")))+
         #facet_wrap(~gammaOrigin,scales='free')+
-        facet_wrap(~gammaOrigin)+
+        scale_color_continuous(name=expression(gamma[S]))+
+        facet_wrap(~gammaOriginString)+
         xlab(expression(d[G]))+stdtheme
       ggsave(file=paste0(resdir,indicator,'_countryGravityDecay',countryGravityDecay,'_gammaDestination',gammaDestination,'_facetwrapgammaOrigin_colorgammaSectors.png'),width=30,height=15,units='cm')
     }
