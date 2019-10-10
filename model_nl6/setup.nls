@@ -43,11 +43,14 @@ end
 ; globals
 to setup:setup-globals
   
+  ;;
+  ; compatibility checks between runtime and setup
+  ; TODO allow hist traj on semi-synth data
+  if setup:setup-type != "real" and cities:structure-evolution-mode = "historical" [error "Historical trajectories can not be run on synthetic data"]
+  
   random-seed setup:seed
   
-  set setup:cities-number 700
-  set setup:region-width 3000
-  set world:distance-rescaling setup:region-width / world-width
+  set setup:cities-file "setup/cities.csv"
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
@@ -79,25 +82,63 @@ to setup:setup-world
   ; resize so that distance primitives gives directly the distance ?
   ;resize-world 0 setup:region-width 0 setup:region-width 
   ; -> does not work as gives too much patches - distances shall be rescaled by hand
-  set-patch-size 3
-  resize-world 0 200 0 200
+  if setup:setup-type != "real" [
+    set-patch-size 3
+    resize-world 0 200 0 200
+    
+    set setup:cities-number 700
+    set setup:region-width 3000
+    set world:distance-rescaling setup:region-width / world-width
+    
+  ]
+  if setup:setup-type = "real" [
+    ; use gis datasets
+    ;; TODO reproject to the same projection as city coordinates - MUST NOT BE GEO COORDS (euclidian distances below)
+    let envelope gis:load-dataset "setup/gis/envelope_wgs84.shp"
+    let bbox gis:envelope-of envelope let ratio abs (item 0 bbox - item 1 bbox) / abs (item 2 bbox - item 3 bbox)   
+    set-patch-size 3
+    resize-world 0 round (200 * ratio) 0 200
+    gis:set-world-envelope bbox
+    let countries gis:load-dataset "setup/gis/europe_wgs84.shp"
+    if runtime:headless? = 0 [
+      gis:set-drawing-color brown gis:draw countries 1
+    ]
+    ;set world:envelope gis:envelope-of countries ; does not work, fucking canary islands or madere
+    set world:envelope bbox
+  ]
+  
 end
 
 
+;;
+;
+to setup:load-city-data
+  set setup:cities-data but-first utils:file:read-csv setup:cities-file ";"
+  set setup:cities-data map [? -> map [?? -> read-from-string ??] ?] setup:cities-data ; all fields are numeric
+end
+
 to setup:setup-cities
   
-  if setup:setup-type = "synthetic" [
+  if setup:setup-type = "synthetic" or setup:setup-type = "synthetic-realsectors" or setup:setup-type = "synthetic-realsizes-realsectors" [
     let i 0
     create-cities setup:cities-number [cities:new-city i set i i + 1]
     cities:set-countries-clustering
-    cities:setup-sectors-composition
+    if setup:setup-type = "synthetic" [
+      cities:setup-synthetic-sectors-composition
+    ]
+    if setup:setup-type = "synthetic-realsectors" or setup:setup-type = "synthetic-realsizes-realsectors" [
+      setup:load-city-data
+      cities:setup-real-sectors-or-size (setup:setup-type = "synthetic-realsizes-realsectors")
+    ]
   ]
   
   
   
-  ;; TODO
+  ;; 
   if setup:setup-type = "real" [
-    error "unimplemented"
+    ; fully real setup: positions, countries, and historical trajs
+    setup:load-city-data
+    cities:setup-real-cities
   ]
   
   
@@ -108,6 +149,7 @@ end
 ; setup geo dist matrix, sociocultural dist matrix
 ;
 ;  - socio-cult distance matrix is set as geo distance between centroids for now
+;    TODO estimate this with fixed effects on real data
 to setup:setup-distance-matrices
   
   let orderedcities sort-on [city:number] cities

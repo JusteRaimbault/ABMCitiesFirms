@@ -43,8 +43,8 @@ end
 
 
 ;;
-;
-to cities:setup-sectors-composition
+; synthetic sector composition for cities
+to cities:setup-synthetic-sectors-composition
   
   set runtime:max-gdp max [city:gdp] of cities
   set runtime:min-gdp min [city:gdp] of cities
@@ -55,6 +55,56 @@ to cities:setup-sectors-composition
     
 end
 
+
+;;
+; real sector composition - static at t=0 only
+to cities:setup-real-sectors-or-size [with-size?]
+  let dates map [? -> item 1 ?] setup:cities-data
+  let t0 min dates
+  foreach setup:cities-data [row ->
+    if item 1 row = t0 [
+      let id item 0 row
+      let sectors sublist row 6 (length row)
+      ask one-of cities with [city:number = id][
+        set city:sector-composition sectors
+        if with-size? [
+          set city:gdp item 5 row
+        ]
+      ]
+    ] 
+  ]  
+end
+
+;;
+; full real data
+to cities:setup-real-cities
+  let dates remove-duplicates map [? -> item 1 ?] setup:cities-data
+  set runtime:dates sort dates
+  set runtime:current-date-index 0 ; not fully appropriate to do it here
+  let t0 min dates
+  let cities-numbers remove-duplicates map [? -> item 0 ?] setup:cities-data
+  foreach cities-numbers [n -> create-cities 1 [set city:number n set shape "circle" set city:historical-gdp utils:list:rep 0 (length dates) set city:historical-sectors utils:list:rep [] (length dates)]]
+
+  foreach setup:cities-data [row ->
+    let id item 0 row let t item 1 row let gdp item 5 row let country item 4 row let x city:rescale-x item 2 row let y city:rescale-y item 3 row
+    let sectors sublist row 6 (length row)
+    if t = t0 [
+      ask one-of cities with [city:number = id][
+        set city:sector-composition sectors
+        set city:gdp gdp
+        set city:country country 
+        setxy x y
+      ]
+    ]
+    ; whatever the time upate hist trajs
+    ask one-of cities with [city:number = id][
+      set city:historical-gdp replace-item (position t runtime:dates) city:historical-gdp gdp
+      set city:historical-sectors replace-item (position t runtime:dates) city:historical-sectors sectors
+    ]
+  ]
+  
+  set setup:sectors-number length [city:sector-composition] of one-of cities
+end
 
 
 ;;
@@ -168,9 +218,29 @@ to cities:new-city [number]
 end
 
 
+to-report city:rescale-x [x]
+  if world:envelope = 0 [report x]
+  let xx ((x - item 0 world:envelope) / (item 1 world:envelope - item 0 world:envelope))*(max-pxcor - min-pxcor) + min-pxcor
+  ;if xx < 0 [show x]
+  report xx
+end
+
+to-report city:rescale-y [y]
+  if world:envelope = 0 [report y]
+  let yy ((y - item 2 world:envelope) / (item 3 world:envelope - item 2 world:envelope))*(max-pycor - min-pycor) + min-pycor
+  ;if yy < 0 [show y]
+  report yy
+end
+
+
 ;;
 ; weighted degree of a city
 to-report city:weighted-degree
   report sum [firmlink:volume] of my-firmlinks
 end
+
+
+
+
+
 

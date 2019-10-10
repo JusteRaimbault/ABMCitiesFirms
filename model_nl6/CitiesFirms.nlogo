@@ -1,4 +1,4 @@
-extensions [matrix table nw kmeans numanal]
+extensions [matrix table nw kmeans numanal gis]
 
 __includes [
   "setup.nls"
@@ -15,6 +15,8 @@ __includes [
   "utils/List.nls"
   "utils/Statistics.nls"
   "utils/Matrix.nls"
+  "utils/File.nls"
+  "utils/String.nls"
 
 ]
 
@@ -33,7 +35,10 @@ globals [
 
  ;setup:sectors-number
 
-
+  ;;
+  ; format of csv file is : city-number;date;Xcor;Ycor;Country;GDP;S_0;...;S_{K-1}
+  setup:cities-file
+  setup:cities-data
 
   ;;
   ; runtime variables
@@ -50,7 +55,12 @@ globals [
 
   runtime:failed?
 
+  ;;
+  ; for synthetic mode
   runtime:final-time
+
+  runtime:dates
+  runtime:current-date-index
 
   ;;
   ; cities
@@ -60,7 +70,7 @@ globals [
   cities:sectors-proximity-matrix
 
   world:distance-rescaling
-
+  world:envelope
 
   links:network-adjacency-matrix
   ;links:link-proba-list
@@ -100,6 +110,14 @@ cities-own [
   ; internal use (clustering)
   city:feature
 
+  ;;
+  ; historical traj of gdp
+  city:historical-gdp
+
+  ;;
+  ; historical traj of sectors
+  city:historical-sectors
+
 
 
 ]
@@ -116,7 +134,7 @@ firmlinks-own [
 GRAPHICS-WINDOW
 340
 13
-951
+1182
 625
 -1
 -1
@@ -131,7 +149,7 @@ GRAPHICS-WINDOW
 0
 1
 0
-200
+277
 0
 200
 0
@@ -196,23 +214,23 @@ CHOOSER
 293
 cities:structure-evolution-mode
 cities:structure-evolution-mode
-"fixed" "size-interactions"
+"fixed" "historical" "size-interactions"
 0
 
 CHOOSER
-16
-16
-154
-61
+12
+11
+128
+56
 setup:setup-type
 setup:setup-type
-"synthetic" "real"
-0
+"synthetic" "synthetic-realsectors" "synthetic-realsizes-realsectors" "real"
+3
 
 CHOOSER
 14
 111
-219
+133
 156
 setup:sector-composition-mode
 setup:sector-composition-mode
@@ -220,10 +238,10 @@ setup:sector-composition-mode
 1
 
 PLOT
-1190
-62
-1390
-212
+1219
+59
+1419
+209
 sectors-distribution
 NIL
 NIL
@@ -238,10 +256,10 @@ PENS
 "default" 1.0 0 -16777216 true "" ""
 
 BUTTON
-1195
-27
-1299
-60
+1224
+24
+1328
+57
 hist sectors
 display:hist-sectors
 NIL
@@ -263,7 +281,7 @@ params:gamma-origin
 params:gamma-origin
 0
 10
-0.0
+1.9
 0.05
 1
 NIL
@@ -278,7 +296,7 @@ params:gamma-destination
 params:gamma-destination
 0
 10
-0.0
+1.85
 0.05
 1
 NIL
@@ -323,7 +341,7 @@ params:gravity-decay
 params:gravity-decay
 1
 3000
-500.0
+1.0
 50
 1
 NIL
@@ -338,7 +356,7 @@ params:country-gravity-decay
 params:country-gravity-decay
 1
 50000
-2100.0
+1.0
 50
 1
 NIL
@@ -392,10 +410,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-1199
-243
-1293
-276
+1228
+240
+1322
+273
 indicators
 indicators:compute-indicators
 NIL
@@ -417,17 +435,17 @@ setup:sectors-number
 setup:sectors-number
 0
 100
-50.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1129
-311
-1355
-344
+1220
+334
+1446
+367
 display:link-hide-threshold
 display:link-hide-threshold
 0
@@ -439,10 +457,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-1132
-353
-1235
-386
+1223
+376
+1326
+409
 toggle links
 display:toggle-links
 NIL

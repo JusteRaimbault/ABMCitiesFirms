@@ -8,7 +8,11 @@ to display:setup-display
   display:update-display
   
   ; patches do not change color
-  ask patches [set pcolor [item (city:country mod length base-colors) base-colors] of one-of cities with-min [distance myself]]
+  ifelse setup:setup-type != "real" [
+    ask patches [set pcolor [item (city:country mod length base-colors) base-colors] of one-of cities with-min [distance myself]]
+  ][
+    ask patches [set pcolor "white"] 
+  ]
 end
 
 
@@ -19,11 +23,15 @@ to display:update-display
 
   let mi min [log city:gdp 10] of cities let ma max [log city:gdp 10] of cities
   ask cities [
-    set size 10 * (log city:gdp 10 - mi)/(ma - mi)
+    ;set size 10 * (log city:gdp 10 - mi)/(ma - mi)
+    set size 4 * (log city:gdp 10 - mi)/(ma - mi)
     ;set size (log city:gdp 10) - 5 ; also shitty
     ;set size max (list (20 * city:gdp / setup:max-gdp) 1)
-    ;set color item (city:country mod length base-colors) base-colors
-    set color black
+    ifelse setup:setup-type = "real" [
+      set color item (city:country mod length base-colors) base-colors
+    ][
+      set color black
+    ]
   ]
   
   ifelse count firmlinks > 0 [set ma max [firmlink:volume] of firmlinks][set ma 0]
