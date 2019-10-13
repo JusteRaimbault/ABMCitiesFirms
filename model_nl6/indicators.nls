@@ -44,6 +44,15 @@ end
 
 
 
+;;
+; data fit indicators
+
+;;
+; Current mse as \sum_{i,j} (w_{ij} - wr_{ij})^2 where wr_{ij} is the real weight at the current year
+to-report indicators:current-mse-weights
+
+end
+
 
 ;;
 ; network indicators

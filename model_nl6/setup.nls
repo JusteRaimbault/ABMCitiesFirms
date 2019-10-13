@@ -14,6 +14,8 @@ to setup:setup
   
   setup:setup-distance-matrices
   
+  setup:setup-initial-network
+  
   cities:compute-link-utility-matrix
   
   if runtime:headless? = 0 [
@@ -51,6 +53,7 @@ to setup:setup-globals
   random-seed setup:seed
   
   set setup:cities-file "setup/cities.csv"
+  set setup:network-file "setup/network.csv"
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
@@ -111,12 +114,14 @@ end
 
 
 ;;
-;
+; load real data
 to setup:load-city-data
   set setup:cities-data but-first utils:file:read-csv setup:cities-file ";"
   set setup:cities-data map [? -> map [?? -> read-from-string ??] ?] setup:cities-data ; all fields are numeric
 end
 
+;;
+; setup cities
 to setup:setup-cities
   
   if setup:setup-type = "synthetic" or setup:setup-type = "synthetic-realsectors" or setup:setup-type = "synthetic-realsizes-realsectors" [
@@ -178,6 +183,51 @@ to setup:setup-distance-matrices
   
 end
 
+
+;;
+; initial network
+;  - synthetic ? -> PrefAtt or similar, may be equivalent to already run the model (effect only on link history dependency)
+;  - real? create ghost links with date attributes
+to setup:setup-initial-network
+  
+  if setup:setup-type = "real" [
+     ; cities already have trajectories in that case-> one network for each date
+    ask cities [
+      let number city:number
+       foreach runtime:dates [ year ->
+        hatch-real-cities 1 [set hidden? true set real-city:number number set real-city:year year]
+      ]
+    ]
+    
+     let nwdata but-first utils:file:read-csv setup:network-file ";"
+     set nwdata map [? -> map [?? -> read-from-string ??] ?] nwdata
+     foreach nwdata [ row ->
+      let year item 2 row
+      let origin one-of real-cities with [real-city:number = item 0 row and real-city:year = year] let destination one-of real-cities with [real-city:number = item 1 row and real-city:year = year]
+      let weight item 3 row
+      ask origin [
+        if not out-real-firmlink-neighbor? destination [
+          create-real-firmlink-to destination [set hidden? true set real-firmlink:volume weight set real-firmlink:year year]
+        ]
+      ]
+     ]
+    
+    ; real networks have been created -> use the one at the first date to initialize
+    let t0 min runtime:dates
+    ask real-firmlinks with [real-firmlink:year = t0] [
+      let origin end1 let destination end2 let w real-firmlink:volume
+      ask origin [
+        ifelse not out-firmlink-neighbor? destination [
+          create-firmlink-to destination [set firmlink:volume w]
+        ][
+          ask one-of (my-out-firmlinks with [end2 = destination]) [set firmlink:volume firmlink:volume + w]
+        ] 
+      ]
+    ]
+    
+  ]
+  
+end
 
 
 
