@@ -53,7 +53,7 @@ to setup:setup-globals
   random-seed setup:seed
   
   set setup:cities-file "setup/cities.csv"
-  set setup:network-file "setup/network.csv"
+  set setup:network-file "setup/links.csv"
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
@@ -117,7 +117,7 @@ end
 ; load real data
 to setup:load-city-data
   set setup:cities-data but-first utils:file:read-csv setup:cities-file ";"
-  set setup:cities-data map [? -> map [?? -> read-from-string ??] ?] setup:cities-data ; all fields are numeric
+  ;set setup:cities-data map [? -> map [?? -> read-from-string ??] ?] setup:cities-data ; all fields are numeric ? ! no - city name
 end
 
 ;;
@@ -215,13 +215,15 @@ to setup:setup-initial-network
     ; real networks have been created -> use the one at the first date to initialize
     let t0 min runtime:dates
     ask real-firmlinks with [real-firmlink:year = t0] [
-      let origin end1 let destination end2 let w real-firmlink:volume
+      let ro end1 let origin one-of cities with-min [distance ro] let rd end2 let destination one-of cities with-min [distance rd]
+      let w real-firmlink:volume
       ask origin [
         ifelse not out-firmlink-neighbor? destination [
-          create-firmlink-to destination [set firmlink:volume w]
+          create-firmlink-to destination [links:new-link set firmlink:volume w]
         ][
+          ; should not have duplicates in the links file
           ask one-of (my-out-firmlinks with [end2 = destination]) [set firmlink:volume firmlink:volume + w]
-        ] 
+        ]
       ]
     ]
     

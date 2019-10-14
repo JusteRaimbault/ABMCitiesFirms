@@ -41,6 +41,10 @@ globals [
   setup:cities-data
 
   ;;
+  ; format of network csv: id_origin;id_destination;year;date
+  setup:network-file
+
+  ;;
   ; runtime variables
 
   runtime:headless?
@@ -92,6 +96,10 @@ cities-own [
   city:number
 
   ;;
+  ; city name
+  city:name
+
+  ;;
   ; country of the city
   city:country
 
@@ -122,6 +130,12 @@ cities-own [
 
 ]
 
+breed [real-cities real-city]
+
+real-cities-own[
+  real-city:number
+  real-city:year
+]
 
 directed-link-breed [firmlinks firmlink]
 
@@ -130,6 +144,23 @@ firmlinks-own [
   firmlink:volume
 
 ]
+
+directed-link-breed [real-firmlinks real-firmlink]
+
+real-firmlinks-own [
+ real-firmlink:volume
+ real-firmlink:year
+]
+
+
+
+
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 340
@@ -371,7 +402,7 @@ runtime:city-evolution-scale
 runtime:city-evolution-scale
 1
 1000
-10000.0
+401.0
 10
 1
 NIL
@@ -435,7 +466,7 @@ setup:sectors-number
 setup:sectors-number
 0
 100
-10.0
+90.0
 1
 1
 NIL

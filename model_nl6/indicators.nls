@@ -50,7 +50,15 @@ end
 ;;
 ; Current mse as \sum_{i,j} (w_{ij} - wr_{ij})^2 where wr_{ij} is the real weight at the current year
 to-report indicators:current-mse-weights
-
+  let mse 0
+  ask firmlinks [
+    let origin end1 let destination end2
+    ask one-of (real-firmlinks with [end1 = origin and end2 = destination and real-firmlink:year = runtime:current-date]) [
+     ;;
+     ; TODO
+      
+    ]
+  ]
 end
 
 
