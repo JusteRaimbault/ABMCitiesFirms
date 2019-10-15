@@ -31,8 +31,12 @@ def click_validate(driver,id):
     driver.find_element_by_name(id).send_keys(Keys.ENTER)
 
 
-def wait_and_click(driver, id):
-    WebDriverWait(driver, 10).until(expected_conditions.presence_of_element_located((By.ID, id)))
+def wait_for_id(driver,id,timeout=1000):
+    WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.ID, id)))
+
+
+def wait_and_click(driver, id,timeout=1000):
+    wait_for_id(driver,id,timeout)
     action_chains.ActionChains(driver).click(driver.find_element_by_id(id)).perform()
 
 def select(driver,id,value):
