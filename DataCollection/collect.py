@@ -28,34 +28,41 @@ print("login successful")
 
 # go to saved search
 navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_TabSavedSearches")
+print("Saved searches")
 
 # retrieve first saved search
 navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
+print("First saved search")
 
-while True:
+remaining=True
+
+while remaining:
     RANGE_STR = utils.read_from_file(utils.get_param('rangefile'))
-    RANGE_FROM = RANGE_STR.split("-")[0]
-    RANGE_TO = RANGE_STR.split("-")[1]
-    print("Getting range "+RANGE_STR)
+    if RANGE_STR is not None:
+        RANGE_FROM = RANGE_STR.split("-")[0]
+        RANGE_TO = RANGE_STR.split("-")[1]
+        print("Getting range "+RANGE_STR)
 
-    # go to export
-    navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_ListHeader_ListHeaderRightButtons_ExportButtons_ExportButton")
-    time.sleep(5)
-    #print(driver.window_handles)
-    driver.switch_to_window(driver.window_handles[1])
-    print("Switch to export window")
+        # go to export
+        navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_ListHeader_ListHeaderRightButtons_ExportButtons_ExportButton")
+        time.sleep(5)
+        #print(driver.window_handles)
+        driver.switch_to_window(driver.window_handles[1])
+        print("Switch to export window")
 
-    # export parameters
-    navigation.fill_field(driver,"RANGEFROM",str(RANGE_FROM),False)
-    navigation.fill_field(driver,"RANGETO",str(RANGE_TO),False)
-    navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR)
-    navigation.select(driver,"exportformat","UTF16Delimited")
+        # export parameters
+        navigation.fill_field(driver,"RANGEFROM",str(RANGE_FROM),False)
+        navigation.fill_field(driver,"RANGETO",str(RANGE_TO),False)
+        navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR)
+        navigation.select(driver,"exportformat","UTF16Delimited")
 
-    navigation.wait_and_click(driver,"imgBnOk")
-    print("Waiting for file download")
-    navigation.wait_for_id(driver,"DownloadPanel")
-    time.sleep(10) # is it necessary while downlload occur / will this be enough time for large files?
+        navigation.wait_and_click(driver,"imgBnOk")
+        print("Waiting for file download")
+        navigation.wait_for_id(driver,"DownloadPanel")
+        time.sleep(10) # is it necessary while downlload occur / will this be enough time for large files?
 
-    # close the window
-    driver.close()
-    driver.switch_to_window(driver.window_handles[0])
+        # close the window
+        driver.close()
+        driver.switch_to_window(driver.window_handles[0])
+    else:
+        remaining = False

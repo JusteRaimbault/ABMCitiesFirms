@@ -2,11 +2,15 @@
 
 def read_from_file(filename):
     data = open(filename,'r').readlines()
+    #print(data)
     newcontent = [l.replace('\n','') for l in data[1:]]
     filewriter = open(filename,'w')
     for l in newcontent:
-        ports.write(l+'\n')
-    return(data[0].replace('\n',''))
+        filewriter.write(l+'\n')
+    if len(data)>0:
+        return(data[0].replace('\n',''))
+    else:
+        return(None)
 
 
 
