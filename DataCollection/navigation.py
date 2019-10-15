@@ -23,9 +23,13 @@ def set_download_profile(profile):
 
 def fill_field(driver,id,value,by_id = True):
     if by_id:
-        driver.find_element_by_id(id).send_keys(value)
+        elem = driver.find_element_by_id(id)
+        elem.clear()
+        elem.send_keys(value)
     else: # else by name
-        driver.find_element_by_name(id).send_keys(value)
+        elem = driver.find_element_by_name(id)
+        elem.clear()
+        elem.send_keys(value)
 
 def click_validate(driver,id):
     driver.find_element_by_name(id).send_keys(Keys.ENTER)
