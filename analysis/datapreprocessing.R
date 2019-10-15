@@ -58,6 +58,12 @@ nwnodes = iata[iata$IATA%in%nwnodescodes,c("IATA","CITY","COUNTRY","LAT","LONG")
 nwnodessp = SpatialPointsDataFrame(coords = nwnodes[,c("LONG","LAT")] ,data = nwnodes,proj4string = CRS(st_crs(countries)$proj4string))
 writeOGR(nwnodessp,'Data/firms','nwnodes.shp',driver = 'ESRI Shapefile')
 
+# --------
+# EDIT : move LGW into London FUA for UK links consistency
+nwnodessp <- readOGR('Data/firms','nwnodes.shp')
+# --------
+
+
 # fucking mess, coordinates are for airports, generally outside GHS polygons (these are built-up areas !)
 #  -> either get polygons for "LUR", or aggregate everything at FUA level
 # (will loose many points though ?) but these have no GDP anyway
@@ -66,8 +72,13 @@ writeOGR(nwnodessp,'Data/firms','nwnodes.shp',driver = 'ESRI Shapefile')
 #cities = cities[envelope,op=st_within]
 cities=ucdb[fuas,op=st_within]
 
+
+####
 # summarize gdp by fua
-citiesaggr = st_join(cities,fuas,op=st_within) %>% group_by(FUA_CODE) %>% summarize(
+# TODO -- the spatial join must be crap - cf London GDP
+
+#citiesaggr = st_join(cities,fuas,op=st_within) %>% group_by(FUA_CODE) %>% summarize(
+citiesaggr = st_join(cities,fuas,op=st_intersects) %>% group_by(FUA_CODE) %>% summarize(
   #gdp15 = sum(GDP15_SM),
   #gdp00 = sum(GDP00_SM)
   # extrapolate 2010, 2013, 2016
@@ -165,6 +176,9 @@ names(linksdf)<-c("id_origin","id_destination","year","weight")
 # filter NAs # 2 links only ? - issue ! : factor in lur passage table !
 linksdf = linksdf[!is.na(linksdf$id_origin)&!is.na(linksdf$id_destination),]
 linksdf = linksdf[linksdf$id_origin!=linksdf$id_destination,]
+
+# filter links with weight = 0
+linksdf = linksdf[linksdf$weight>0,]
 
 write.table(linksdf,file = 'model_nl6/setup/links.csv',sep = ";",row.names = F,col.names = T,quote = F)
 

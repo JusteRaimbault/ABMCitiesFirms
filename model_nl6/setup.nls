@@ -57,14 +57,18 @@ to setup:setup-globals
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
+
+  set indicators:target-country-mse (list 28)
   
 end
+
 
 
 ;;
 ; setup default headless variables
 to setup:setup-headless
-  set setup:setup-type "synthetic"
+  
+  ;set setup:setup-type "synthetic"
   
   set setup:scaling-exponent 1.1
   set setup:sectors-number 50
@@ -193,9 +197,9 @@ to setup:setup-initial-network
   if setup:setup-type = "real" [
      ; cities already have trajectories in that case-> one network for each date
     ask cities [
-      let number city:number
+      let number city:number let country city:country
        foreach runtime:dates [ year ->
-        hatch-real-cities 1 [set hidden? true set real-city:number number set real-city:year year]
+        hatch-real-cities 1 [set hidden? true set real-city:number number set real-city:year year set real-city:country country]
       ]
     ]
     
@@ -212,19 +216,22 @@ to setup:setup-initial-network
       ]
      ]
     
-    ; real networks have been created -> use the one at the first date to initialize
-    let t0 min runtime:dates
-    ask real-firmlinks with [real-firmlink:year = t0] [
-      let ro end1 let origin one-of cities with-min [distance ro] let rd end2 let destination one-of cities with-min [distance rd]
-      let w real-firmlink:volume
-      ask origin [
-        ifelse not out-firmlink-neighbor? destination [
-          create-firmlink-to destination [links:new-link set firmlink:volume w]
-        ][
-          ; should not have duplicates in the links file
-          ask one-of (my-out-firmlinks with [end2 = destination]) [set firmlink:volume firmlink:volume + w]
+    
+    if setup:with-initial-network? = true [
+      ; real networks have been created -> use the one at the first date to initialize
+      let t0 min runtime:dates
+      ask real-firmlinks with [real-firmlink:year = t0] [
+        let ro end1 let origin one-of cities with-min [distance ro] let rd end2 let destination one-of cities with-min [distance rd]
+        let w real-firmlink:volume
+        ask origin [
+          ifelse not out-firmlink-neighbor? destination [
+            create-firmlink-to destination [links:new-link set firmlink:volume w]
+          ][
+            ; should not have duplicates in the links file
+            ask one-of (my-out-firmlinks with [end2 = destination]) [set firmlink:volume firmlink:volume + w]
+          ]
         ]
-      ]
+     ]
     ]
     
   ]

@@ -7,13 +7,15 @@
 ;;
 ; setup experiment
 ;  by default synthetic and fixed cities for now
-to experiments:setup-experiment [synth-scaling-exponent synth-sectors-number synth-sectors-mode finaltime gamma-origin gamma-destination gamma-links gamma-sectors gravity-decay country-gravity-decay seed]
+to experiments:setup-experiment [setup-type synth-scaling-exponent synth-sectors-number synth-sectors-mode finaltime gamma-origin gamma-destination gamma-links gamma-sectors gravity-decay country-gravity-decay seed]
   
   
   
   ca
   
   set runtime:headless? true
+  
+  set setup:setup-type setup-type
   
   setup:setup-headless
   
@@ -55,7 +57,7 @@ end
 ; test 
 to experiments:test-experiment
   ;experiments:setup-experiment 1.1 50 "log-normal" 500 1.0 1.0 1.0 1.0 200.0 200.0 (random 10000)
-  experiments:setup-experiment 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 2100.0 1388528261
+  experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 2100.0 1388528261
   experiments:run-experiment
   indicators:compute-indicators
 end

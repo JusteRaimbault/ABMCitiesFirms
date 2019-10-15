@@ -66,6 +66,7 @@ globals [
   runtime:dates
   runtime:current-date-index
 
+
   ;;
   ; cities
 
@@ -81,6 +82,12 @@ globals [
   links:link-utilities-matrix
 
 
+  ;;
+  ; indicators
+
+  indicators:target-country-mse
+  indicators:total-mse
+  indicators:total-mselog
 
 
 
@@ -135,6 +142,7 @@ breed [real-cities real-city]
 real-cities-own[
   real-city:number
   real-city:year
+  real-city:country
 ]
 
 directed-link-breed [firmlinks firmlink]
@@ -224,10 +232,10 @@ NIL
 0
 
 SLIDER
-6
-67
-181
-100
+1
+81
+176
+114
 setup:scaling-exponent
 setup:scaling-exponent
 0.5
@@ -259,10 +267,10 @@ setup:setup-type
 3
 
 CHOOSER
-14
-111
-133
-156
+5
+117
+124
+162
 setup:sector-composition-mode
 setup:sector-composition-mode
 "random" "log-normal"
@@ -312,7 +320,7 @@ params:gamma-origin
 params:gamma-origin
 0
 10
-1.9
+0.25
 0.05
 1
 NIL
@@ -327,7 +335,7 @@ params:gamma-destination
 params:gamma-destination
 0
 10
-1.85
+0.25
 0.05
 1
 NIL
@@ -342,7 +350,7 @@ params:gamma-links
 params:gamma-links
 0
 10
-0.0
+10.0
 0.05
 1
 NIL
@@ -357,7 +365,7 @@ params:gamma-sectors
 params:gamma-sectors
 0
 10
-0.2
+1.05
 0.05
 1
 NIL
@@ -372,7 +380,7 @@ params:gravity-decay
 params:gravity-decay
 1
 3000
-1.0
+801.0
 50
 1
 NIL
@@ -387,7 +395,7 @@ params:country-gravity-decay
 params:country-gravity-decay
 1
 50000
-1.0
+5951.0
 50
 1
 NIL
@@ -401,8 +409,8 @@ SLIDER
 runtime:city-evolution-scale
 runtime:city-evolution-scale
 1
-1000
-401.0
+10000
+571.0
 10
 1
 NIL
@@ -426,10 +434,10 @@ NIL
 1
 
 SLIDER
-159
-19
-331
-52
+144
+43
+316
+76
 setup:seed
 setup:seed
 -100000
@@ -458,10 +466,10 @@ NIL
 1
 
 SLIDER
-182
-67
-339
-100
+177
+81
+334
+114
 setup:sectors-number
 setup:sectors-number
 0
@@ -503,6 +511,28 @@ NIL
 NIL
 NIL
 1
+
+SWITCH
+133
+10
+330
+43
+setup:with-initial-network?
+setup:with-initial-network?
+1
+1
+-1000
+
+MONITOR
+1204
+431
+1373
+476
+NIL
+indicators:total-mse
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -6,7 +6,8 @@
 to cities:evolve-cities
   
   ; switch the current date
-  
+  set runtime:current-date-index runtime:current-date-index + 1
+  ;if runtime:current-date-index > (length runtime:dates - 1) [stop]
   
   if cities:structure-evolution-mode = "fixed" [
     ; do nothing - baseline 
@@ -19,6 +20,11 @@ to cities:evolve-cities
     cities:compute-link-utility-matrix
   ]
   
+  ; FIXME ok as soon as date-related indics only !
+  if runtime:current-date-index < (length runtime:dates - 1) [
+    indicators:update-indicators
+  ]
+    
 end
 
 

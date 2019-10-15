@@ -23,6 +23,9 @@ to main:go
   
   tick
   
+  ;; dirty to use exception as control flow !!!
+  carefully [let t runtime:current-date][stop]
+  
 end
 
 
@@ -33,4 +36,10 @@ to main:go-full-period
     ;show ticks
     main:go
   ]
+end
+
+
+
+to-report runtime:current-date
+  report item runtime:current-date-index runtime:dates
 end
