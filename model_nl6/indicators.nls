@@ -42,7 +42,8 @@ to indicators:compute-indicators
 end
 
 
-
+;;
+; macro timesteps indicators
 to indicators:update-indicators
   
   set indicators:total-mse indicators:total-mse + (indicators:current-mse-weights indicators:target-country-mse runtime:current-date false)

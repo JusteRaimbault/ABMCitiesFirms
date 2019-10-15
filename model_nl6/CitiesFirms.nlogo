@@ -534,6 +534,17 @@ indicators:total-mse
 1
 11
 
+MONITOR
+1205
+480
+1374
+525
+NIL
+indicators:total-mselog
+17
+1
+11
+
 @#$#@#$#@
 ## WHAT IS IT?
 
