@@ -25,7 +25,7 @@ navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_c
 # retrieve first saved search
 navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
 
-for RANGE_FROM in [10000,10010,10020]:
+for RANGE_FROM in [100,200]:
 
     # go to export
     navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_ListHeader_ListHeaderRightButtons_ExportButtons_ExportButton")
