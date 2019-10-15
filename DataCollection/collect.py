@@ -53,7 +53,7 @@ while remaining:
         # export parameters
         navigation.fill_field(driver,"RANGEFROM",str(RANGE_FROM),False)
         navigation.fill_field(driver,"RANGETO",str(RANGE_TO),False)
-        navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR)
+        navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName","-"+RANGE_STR)
         navigation.select(driver,"exportformat","UTF16Delimited")
 
         navigation.wait_and_click(driver,"imgBnOk")
