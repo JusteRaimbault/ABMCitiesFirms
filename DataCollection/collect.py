@@ -33,6 +33,7 @@ print("Saved searches")
 # retrieve first saved search
 navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
 print("First saved search")
+# reload columns -> edit columns, saved lists ? OK default columns saved
 
 remaining=True
 
