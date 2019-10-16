@@ -40,7 +40,7 @@ remaining=True
 while remaining:
     RANGE_STR = utils.read_from_file(utils.get_param('rangefile'))
     if RANGE_STR is not None:
-        try :
+        try:
             RANGE_FROM = RANGE_STR.split("-")[0]
             RANGE_TO = RANGE_STR.split("-")[1]
             print("Getting range "+RANGE_STR)
