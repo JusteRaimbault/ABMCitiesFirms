@@ -21,6 +21,36 @@ def set_download_profile(profile):
     profile.set_preference('browser.download.manager.closeWhenDone', False)
 
 
+
+def initialize():
+    """
+    Reset the driver and connection
+    """
+    profile=webdriver.FirefoxProfile()
+    set_download_profile(profile)
+
+    driver = webdriver.Firefox(firefox_profile=profile)
+
+    # login
+    loginurl = utils.get_param('loginurl')
+    driver.get(loginurl)
+    fill_field(driver,"username",utils.get_param('username'))
+    fill_field(driver,"password",utils.get_param('password'))
+    click_validate(driver,"_eventId_proceed")
+    print("login successful")
+
+    # go to saved search
+    wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_TabSavedSearches")
+    print("Saved searches")
+
+    # retrieve first saved search
+    wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
+    print("First saved search")
+    # reload columns -> edit columns, saved lists ? OK default columns saved
+    return(driver)
+
+
+
 def fill_field(driver,id,value,by_id = True):
     if by_id:
         elem = driver.find_element_by_id(id)

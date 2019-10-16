@@ -10,30 +10,7 @@ import navigation
 #  - generate range file
 #  - set download folder in params
 
-
-profile=webdriver.FirefoxProfile()
-navigation.set_download_profile(profile)
-
-driver = webdriver.Firefox(firefox_profile=profile)
-
-
-
-# login
-loginurl = utils.get_param('loginurl')
-driver.get(loginurl)
-navigation.fill_field(driver,"username",utils.get_param('username'))
-navigation.fill_field(driver,"password",utils.get_param('password'))
-navigation.click_validate(driver,"_eventId_proceed")
-print("login successful")
-
-# go to saved search
-navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_TabSavedSearches")
-print("Saved searches")
-
-# retrieve first saved search
-navigation.wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
-print("First saved search")
-# reload columns -> edit columns, saved lists ? OK default columns saved
+driver = navigation.initialize()
 
 remaining=True
 
@@ -70,6 +47,7 @@ while remaining:
             print('Exception : '+str(e))
             print('Sleeping for a while')
             utils.add_to_file(RANGE_STR,utils.get_param('rangefile'))
-            time.sleep(120)
+            time.sleep(600) # 10 minutes
+            driver = navigation.initialize()
     else:
         remaining = False
