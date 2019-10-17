@@ -1,4 +1,3 @@
-from selenium import webdriver
 
 import time
 import utils
@@ -32,13 +31,13 @@ while remaining:
             # export parameters
             navigation.fill_field(driver,"RANGEFROM",str(RANGE_FROM),False)
             navigation.fill_field(driver,"RANGETO",str(RANGE_TO),False)
-            navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR)
+            navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR+"_"+str(int(time.time())))
             navigation.select(driver,"exportformat","UTF16Delimited")
 
             navigation.wait_and_click(driver,"imgBnOk")
             print("Waiting for file download")
             navigation.wait_for_id(driver,"DownloadPanel")
-            time.sleep(10) # is it necessary while downlload occur / will this be enough time for large files?
+            time.sleep(30) # is it necessary while downlload occur / will this be enough time for large files?
 
             # close the window
             driver.close()
@@ -48,6 +47,7 @@ while remaining:
             print('Sleeping for a while')
             utils.add_to_file(RANGE_STR,utils.get_param('rangefile'))
             time.sleep(600) # 10 minutes
+            driver.quit()
             driver = navigation.initialize()
     else:
         remaining = False

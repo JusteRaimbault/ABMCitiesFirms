@@ -1,13 +1,15 @@
 
-START=1
-END=30
-STEP=10
-FILE=testranges
-
 #START=1
-#END=563389
-#STEP=8900
-#FILE=ranges
+#END=30
+#STEP=10
+#FILE=testranges
+
+START=1
+END=19081827
+STEP=8000
+FILE=ranges
+
+rm $FILE
 
 for i in `seq $START $STEP $END`
 do

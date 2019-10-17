@@ -3,10 +3,10 @@
 def add_to_file(string,filename):
     data = open(filename,'r').readlines()
     #print(data)
-    added = list(string)
     newcontent = [l.replace('\n','') for l in data]
     filewriter = open(filename,'w')
-    for l in added+newcontent:
+    filewriter.write(string+'\n')
+    for l in newcontent:
         filewriter.write(l+'\n')
 
 def read_from_file(filename):
