@@ -66,8 +66,11 @@ def click_validate(driver,id):
     driver.find_element_by_name(id).send_keys(Keys.ENTER)
 
 
-def wait_for_id(driver,id,timeout=1000):
-    WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.ID, id)))
+def wait_for_id(driver,id,timeout=1000,by_id = True):
+    if by_id:
+        WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.ID, id)))
+    else:
+        WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.NAME, id)))
 
 
 def wait_and_click(driver, id,timeout=1000):
