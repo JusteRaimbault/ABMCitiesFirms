@@ -29,6 +29,7 @@ while remaining:
             print("Switch to export window")
 
             # export parameters
+            navigation.wait_for_id(driver,"RANGEFROM",False)
             navigation.fill_field(driver,"RANGEFROM",str(RANGE_FROM),False)
             navigation.fill_field(driver,"RANGETO",str(RANGE_TO),False)
             navigation.fill_field(driver,"ctl00_ContentContainer1_ctl00_LowerContent_Formatexportoptions1_ExportDisplayName",RANGE_STR+"_"+str(int(time.time())))
