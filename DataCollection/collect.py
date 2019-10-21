@@ -47,8 +47,8 @@ while remaining:
             print('Exception : '+str(e))
             print('Sleeping for a while')
             utils.add_to_file(RANGE_STR,utils.get_param('rangefile'))
-            time.sleep(600) # 10 minutes
             driver.quit()
+            time.sleep(600) # 10 minutes
             driver = navigation.initialize()
     else:
         remaining = False
