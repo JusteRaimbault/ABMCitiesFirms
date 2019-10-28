@@ -4,6 +4,7 @@ setwd(paste0(Sys.getenv("CS_HOME"),'/UrbanDynamics/Models/ABMCitiesFirms'))
 library(igraph)
 #library(geonames)
 library(stringi)
+library(dplyr)
 
 firmlinks <- read.csv('Data/firms/links_Amadeus_Europe.csv',quote = "\"",stringsAsFactors = F)
 
@@ -61,6 +62,10 @@ for(country in countries){
   })
 }
 # FR.txt => remove quote line 136500
+# BE.txt => remove quote line 18684 and following
+# RU.txt => remove line 354366 (Kalilingrad Nuclear power plant) ; remove ~2000 lines with quotes cat Data/geonames/RU_orig.txt | awk -F"\"" '{if(NF==25) {print $0}}' > Data/geonames/RU.txt 
+# (should filter quotes in quoteCSV script)
+# AU; IR; JM; KZ; TM; PG
 
 # cat Data/geonames/zipFR.txt | tr "\t" ";" > Data/geonames/zipFR_.txt
 # cat Data/geonames/zipFR_.txt | awk -F";" '{if(NF!=12) print $0}'
@@ -100,6 +105,7 @@ for(country in countries){
 
 # save to gain some time
 save(zipcodes,file='Data/geonames/zipcodesLookup.RData')
+# load('Data/geonames/zipcodesLookup.RData')
 
 # note: zip is always more precise than the city? -> should be fine for coordinates
 # but different granularities accross cities
@@ -144,16 +150,19 @@ missingcities = unique(c(countrycity[missingzips],setdiff(guocountrycity,country
 
 placecountries = unique(sapply(missingcities,function(s){substring(s,1,2)}))
 
+# placecountries=c("CY")
+
 # places lookup
 places=list()
+# placecountries=setdiff(placecountries,names(places))
 for(country in placecountries){
   show(country)
   if(file.exists(paste0('Data/geonames/',country,'.txt'))){
     currentplaces = read.table(file=paste0('Data/geonames/',country,'.txt'),sep = ';',quote="\"",stringsAsFactors = F,fileEncoding = 'UTF-8',header=F)
-    show(nrow(currentplaces))
-    # currentplaces[currentplaces$V2=='Lyon',] # currentplaces[currentplaces$V2=='Montreuil',]
+    # currentplaces[currentplaces$V2=='Lyon',] # currentplaces[currentplaces$V2=='Montreuil',] # currentplaces[currentplaces$V2=='Montreuil',]
     # => lookup must be hierarchial - keep populated places only, should coincide with adminintrative
     currentplaces = currentplaces[currentplaces$V8%in%c("PPLC","PPL","PPLA","PPLA2","PPLA3","PPLA4","PPLA5"),]
+    show(nrow(currentplaces))
     
     currentlookup = list()
     uniqueplaces = unique(currentplaces$V2)
@@ -165,29 +174,226 @@ for(country in placecountries){
       # or for now keep cities only in places lookup
       currentlookup[[stringi::stri_trans_toupper(currentplace)]] = currentplaces[currentplaces$V2==currentplace,]
     }
-    places[[country]]==currentlookup
+    places[[country]]=currentlookup
+  }
+}
+# save lookup table
+save(places,file='Data/geonames/placesLookup.RData')
+# load('Data/geonames/placesLookup.RData')
+
+#Correspondance cities/zipcodes? not totally relevant as can be more precise -> use zipcodes when relevant
+
+# may have problems with accents. characters OK (zh in pinying e.g.)
+# not: 4th field has alternative names and names in different languages -> could be refined
+cityLookup <- function(countrycityname){
+  country = getCountry(countrycityname);cityname=substring(countrycityname,4)
+  if(!country%in%names(places)){return(NULL)}
+  currentlookup = places[[country]]
+  if(!cityname%in%names(currentlookup)){return(NULL)}
+  placematches = currentlookup[[cityname]]
+  #if(nrow(placematches)==1){return(placematches)}
+  # "PPLC","PPL","PPLA","PPLA2","PPLA3","PPLA4","PPLA5" # Q: PPL < PPLAN ? Yes.
+  # fucking ifelse kills the return format - bloody R damn it
+  if("PPLC"%in%placematches$V8) #dirty
+    {return(placematches[which(placematches$V8=="PPLC")[1],5:6])} 
+    else{if("PPLA"%in%placematches$V8){return(placematches[which(placematches$V8=="PPLA")[1],5:6])}
+      else{if("PPLA2"%in%placematches$V8){return(placematches[which(placematches$V8=="PPLA2")[1],5:6])}
+        else{if("PPLA3"%in%placematches$V8){return(placematches[which(placematches$V8=="PPLA3")[1],5:6])}
+           else{if("PPLA4"%in%placematches$V8){return(placematches[which(placematches$V8=="PPLA4")[1],5:6])}
+              else{if("PPLA5"%in%placematches$V8){return(placematches[which(placematches$V8=="PPLA5")[1],5:6])}
+                else{if("PPL"%in%placematches$V8){# in case of concurrent place names at lower hierarchy level, NA (rq: hope no big city classified as PPL and with homonym)
+                  if(length(which(placematches$V8=="PPL"))==1){return(placematches[which(placematches$V8=="PPL")[1],5:6])}else{return(rep(NA,2))}
+                  }else{return(rep(NA,2))}
+                }
+              }
+           }
+        }
+      }
+    }
+}
+
+citiescoverage = sapply(missingcities,cityLookup)
+
+length(which(is.na(citiescoverage)))/length(citiescoverage)
+# missing 20% when remove lower levels
+
+# ! error - some "main names" are not the good ones
+length(which(firmlinks$City=="ROMA"))
+length(which(firmlinks$City=="CHARLEROI"))
+
+# -> find missing cities with large number of links ?
+citiescoverage[is.na(citiescoverage)]
+# -> ex Charleroi missing, classified as PPL
+# -> should keep all levels, replace alternative names if found?
+length(which(unlist(sapply(places[["BE"]],function(d){sapply(d[,4],function(s){length(strsplit(s,',',fixed=T)[[1]])})}))>5))/length(places[["BE"]])
+length(which(unlist(sapply(places[["IT"]],function(d){sapply(d[,4],function(s){length(strsplit(s,',',fixed=T)[[1]])})}))>5))/length(places[["IT"]])
+length(which(unlist(sapply(places[["US"]],function(d){sapply(d[,4],function(s){length(strsplit(s,',',fixed=T)[[1]])})}))>5))/length(places[["US"]])
+
+# duplicate entries for multi-name places (seen as important)
+for(country in names(places)){
+  show(country)
+  inds = names(places[[country]])[which(sapply(places[[country]],function(d){max(sapply(d[,4],function(s){length(strsplit(s,',',fixed=T)[[1]])}))})>5)]
+  show(length(inds))
+  for(ind in inds){
+    currentrec = places[[country]][[ind]]
+    for(i in 1:nrow(currentrec)){
+      altnames = stringi::stri_trans_toupper(strsplit(currentrec[i,4],',',fixed=T)[[1]])
+      #show(altnames)
+      for(altname in altnames){
+        #if(altname %in% names(places[[country]])){places[[country]][[altname]] = rbind(places[[country]][[altname]],currentrec[i,])}else{places[[country]][[altname]] =currentrec[i,]}
+        # no need to test, rbind works with null
+        places[[country]][[altname]] = rbind(places[[country]][[altname]],currentrec[i,])
+      }
+    }
   }
 }
 
-# Correspondance cities/zipcodes? not totally relevant as can be more precise -> use zipcodes when relevant
+save(places,file='Data/geonames/placesLookup_multinames.RData')
 
+# places[["IT"]][["ROMA"]]
+citiescoverage = sapply(missingcities,cityLookup)
+
+# check proportion of NAs
+
+save(citiescoverage,zipcoverage,file='Data/geonames/coverages.RData')
+# load('Data/geonames/coverages.RData')
+
+length(which(sapply(citiescoverage,function(r){length(which(is.na(r)))>0})))/length(citiescoverage)*100
+# 9% of cities failing ; may be special characters / multi-names missing in geonames
+# better remove than using erroneous locations (e.g. when multiple PPL records)
 
 ########
 # geocoding
   
-  
-#'
-#' get origin and destination coordinates ?
-#'  ! should do by BVDid to avoid redundancy
-getCoordinatesOD <- function(r){
-  
-}
-  
-allcoords = apply(firmlinks,1,getCoordinatesOD)
+# -> combine zipcoverage and citycoverage  
+
+#
+# get origin and destination coordinates ?
+#  ! should do by BVDid to avoid redundancy? ~ ok
+
+bvdids = as.tbl(data.frame(id = unique(as.character(firmlinks$BvDIDnumber),as.character(firmlinks$GUOBvDIDnumber))))
+# join to have df of unique ids
+firmlinks$countrycity = paste0(firmlinks$CountryISOcode,"-",firmlinks$City)
+firmlinks$countryzip = paste0(firmlinks$CountryISOcode,firmlinks$Zipcode) # no dash in zip names
+firmlinks$guocountrycity = paste0(firmlinks$GUOCountryISOcode,"-",firmlinks$GUOCity)
+
+# here assume that zip/city record is the same - may not be true if company headquarter changed in time?
+length(which(!duplicated(firmlinks$BvDIDnumber)))
+length(which(!duplicated(paste0(firmlinks$BvDIDnumber,firmlinks$City))))
+# -> only five companies at origin changed their city -> ok consider as fixed
+length(which(!duplicated(firmlinks$GUOBvDIDnumber)))
+length(which(!duplicated(paste0(firmlinks$GUOBvDIDnumber,firmlinks$GUOCity))))
+# -> 97 for GUO - also neglect
+
+firms = left_join(bvdids,as.tbl(firmlinks[!duplicated(firmlinks$BvDIDnumber),c("BvDIDnumber","countryzip","countrycity")]),by=c("id" = "BvDIDnumber"))
+firms = left_join(firms,as.tbl(firmlinks[!duplicated(firmlinks$GUOBvDIDnumber),c("GUOBvDIDnumber","guocountrycity")]),by=c("id"="GUOBvDIDnumber"))
+
+zipcoords <- sapply(zipcoverage,function(r){r[1,10:11]})
+summary(sapply(zipcoords,length))
+length(zipcoords) - length(which(sapply(zipcoords,length)==0))
+
+#getCoordinatesOD <- function(r){
+#  if(r[2]%in%names(zipcoords)){if(!is.null(zipcoords[[r[2]]])){return(zipcoords[[r[2]]])}}
+#  if(r[3]%in%names(citiescoverage)){if(length(which(is.na(citiescoverage[[r[3]]])))==0){return(citiescoverage[[r[3]]])}}
+#  if(r[4]%in%names(citiescoverage)){return(citiescoverage[[r[4]]])} # no pb to be NA at this point
+#  return(c(NA,NA))
+#}
+
+#allcoords = apply(firms,1,getCoordinatesOD)
+# damn inefficient
+uzipcoords = unlist(zipcoords) # nulls are removed when unlisting
+ziplat = uzipcoords[seq(1,length(uzipcoords),2)]
+ziplon = uzipcoords[seq(2,length(uzipcoords),2)]
+
+firms$ziplat = ziplat[paste0(firms$countryzip,".V10")]
+firms$ziplon = ziplon[paste0(firms$countryzip,".V11")]
+
+ucities = unlist(citiescoverage)
+citieslat = as.numeric(ucities[seq(1,length(ucities),2)]);names(citieslat)<-names(ucities)[seq(1,length(ucities),2)]
+citieslon = as.numeric(ucities[seq(2,length(ucities),2)]);names(citieslon)<-names(ucities)[seq(2,length(ucities),2)]
+
+firms$citylat = citieslat[paste0(firms$countrycity,".V5")]
+firms$citylon = citieslon[paste0(firms$countrycity,".V6")]
+
+firms$guocitylat = citieslat[paste0(firms$guocountrycity,".V5")]
+firms$guocitylon = citieslon[paste0(firms$guocountrycity,".V6")]
+
+firms$lat = ifelse(!is.na(firms$ziplat),firms$ziplat,ifelse(!is.na(firms$citylat),firms$citylat,firms$guocitylat))
+firms$lon = ifelse(!is.na(firms$ziplon),firms$ziplon,ifelse(!is.na(firms$citylon),firms$citylon,firms$guocitylon))
 
 
 #######
 # construct simplified network representation -> node table and link table
+
+# turnover / employees may be different if a company is observed as origin and destination at two different dates?
+# -> keep origin info only
+length(!duplicated(firmlinks$GUOBvDIDnumber)) # guos ids are unique -> wtf?
+length(!duplicated(paste0(firmlinks$GUOBvDIDnumber,firmlinks$GUOInformationdate))) # unique !
+length(which(firmlinks$BvDIDnumber==firmlinks$GUOBvDIDnumber)) # 1Mio of self-ownership
+
+firms = left_join(firms,firmlinks[!duplicated(firmlinks$BvDIDnumber),c("BvDIDnumber","Companyname","CountryISOcode","City","Zipcode",
+                                     "NACERev2primarycode","NAICS2017corecode",
+                                     "Nationalindustrycodeprimary","OperatingrevenueTurnoverthEURLastavailyr",
+                                     "NumberofemployeesLastavailyr","Lastyear"
+                                     )],by=c("id"="BvDIDnumber"))
+
+
+
+firms = left_join(firms,firmlinks[!duplicated(firmlinks$GUOBvDIDnumber),c("GUOBvDIDnumber","GUOName","GUOCountryISOcode","GUOCity",
+                                     "GUONACECorecode","GUONAICSCorecode","GUOInformationdate","GUOOperatingrevenueTurnovermEUR","GUONumberofemployees")],by=c("id"="GUOBvDIDnumber"))
+
+# firms[which(is.na(firms$Companyname)),c("id","GUOName")] # strange company
+# setdiff(bvdids$id,as.character(firmlinks$BvDIDnumber)) # ! indeed all GUOs are listed as companies also (and must be their own GUOs)
+# so below operations should not be necessary
+
+firms$name = ifelse(!is.na(firms$Companyname),firms$Companyname,firms$GUOName)
+firms$country = ifelse(!is.na(firms$CountryISOcode),firms$CountryISOcode,firms$GUOCountryISOcode)
+firms$city = ifelse(!is.na(firms$City),firms$City,firms$GUOCity)
+firms$zipcode = ifelse(!is.na(firms$Zipcode),firms$Zipcode,NA)
+firms$nacecode = ifelse(!is.na(firms$NACERev2primarycode),firms$NACERev2primarycode,firms$GUONACECorecode)
+firms$naicscode = ifelse(!is.na(firms$NAICS2017corecode),firms$NAICS2017corecode,firms$GUONAICSCorecode)
+firms$nationalcode = ifelse(!is.na(firms$Nationalindustrycodeprimary),firms$Nationalindustrycodeprimary,NA)
+firms$turnover = ifelse(!is.na(firms$OperatingrevenueTurnoverthEURLastavailyr),firms$OperatingrevenueTurnoverthEURLastavailyr,firms$GUOOperatingrevenueTurnovermEUR)
+firms$employees = ifelse(!is.na(firms$NumberofemployeesLastavailyr),firms$NumberofemployeesLastavailyr,firms$GUONumberofemployees)
+firms$latestinfo = ifelse(!is.na(firms$Lastyear),firms$Lastyear,firms$GUOInformationdate) # all companies have a Lastyear
+
+firms$turnover <- as.numeric(gsub(",","",firms$turnover))
+firms$employees <- as.numeric(gsub(",","",firms$employees))
+
+finalfirms = firms[,c("id","name","lon","lat","country","city","zipcode","nacecode",
+                      "naicscode","nationalcode","turnover","employees","latestinfo")]
+
+100*length(which(is.na(finalfirms$lon)))/nrow(finalfirms) # 11% have no location
+
+finallinks = firmlinks[,c("GUOBvDIDnumber","BvDIDnumber","GUODirect","GUOTotal","GUOInformationdate")]
+finallinks$GUODirect <- as.numeric(finallinks$GUODirect)
+finallinks$GUOTotal <- as.numeric(finallinks$GUOTotal)
+names(finallinks)<-c("from","to","direct_ownership","total_ownership","date")
+finallinks$date[finallinks$date=="n.a."]=NA
+
+# do we have duplicate links ?
+length(which(!duplicated(paste0(finallinks$from,finallinks$to))))/nrow(finallinks)
+# -> 0.2 % - ok
+
+# Q: for self links, should be always 100%
+summary(finallinks[finallinks$from==finallinks$to,c("direct_ownership","total_ownership")]) # yes
+table(finallinks[finallinks$from==finallinks$to,c("date")]) # and observation is ALWAYS NA -> remove these links
+
+# but keep the info that company is owning itself (GUO could be not observed ?)
+ownowners = finallinks$from[finallinks$from==finallinks$to]
+finalfirms$selfown = finalfirms$id%in%ownowners
+
+finallinks = finallinks[finallinks$from!=finallinks$to,]
+
+# write the data
+write.table(finalfirms,file='Data/firms/amadeus_nodes.csv',sep=";",row.names = F,quote=F)
+write.table(finallinks,file='Data/firms/amadeus_links.csv',sep=";",row.names = F,quote=F)
+
+
+####
+library(igraph)
+
+g <- graph_from_data_frame(d = finallinks,vertices=finalfirms)
 
 
 
