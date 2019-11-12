@@ -391,9 +391,8 @@ write.table(finallinks,file='Data/firms/amadeus_links.csv',sep=";",row.names = F
 
 
 ####
-library(igraph)
-
-g <- graph_from_data_frame(d = finallinks,vertices=finalfirms)
+#library(igraph)
+#g <- graph_from_data_frame(d = finallinks,vertices=finalfirms)
 
 
 
