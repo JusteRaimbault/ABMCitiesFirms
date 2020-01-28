@@ -184,6 +184,10 @@ summary(lm(data=d,log(weight)~log(distance)))
 ols <- lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover))
 summary(ols)
 
+### consider
+# - poisson models?
+# - fixed effects similar to constrained spatial interaction models! (check practical 2-3 spInt)
+
 # country fixed effect by hand
 summary(lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+from_country+to_country))
 # pair fixed effect
