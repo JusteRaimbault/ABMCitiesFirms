@@ -1,0 +1,78 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val setupScalingExponent = Val[Double]
+val setupSectorsNumber = Val[Int]
+val setupSectorsMode = Val[String]
+
+val finalTime = Val[Int]
+
+val gammaOrigin = Val[Double]
+val gammaDestination = Val[Double]
+val gammaLinks = Val[Double]
+val gammaSectors = Val[Double]
+val gravityDecay = Val[Double]
+val countryGravityDecay = Val[Double]
+
+// indicators
+val internationalization = Val[Double]
+val metropolization = Val[Double]
+val networkModularity = Val[Double]
+val networkAvgCommunitySize = Val[Double]
+val networkAvgDegree = Val[Double]
+val networkDegreeEntropy = Val[Double]
+val flowsEntropy = Val[Double]
+val firmLinks = Val[Double]
+
+val replication = Val[Int]
+
+val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}","experiments:run-experiment")
+
+val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+    inputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+      gravityDecay,countryGravityDecay,replication),
+    outputs += internationalization mapped "indicators:internationalization",
+    outputs += metropolization mapped "indicators:metropolization",
+    outputs += networkModularity mapped "indicators:network-weighted-louvain-modularity",
+    outputs += networkAvgCommunitySize mapped "indicators:network-average-community-size",
+    outputs += networkAvgDegree mapped "indicators:network-average-weighted-degree",
+    outputs += networkDegreeEntropy mapped "indicators:network-weighted-degree-distribution-entropy",
+    outputs += flowsEntropy mapped "indicators:flows-distribution-entropy",
+    outputs += firmLinks mapped "count firmlinks",
+    setupScalingExponent := 1.1,
+    setupSectorsNumber := 50,
+    setupSectorsMode := "log-normal",
+    finalTime := 5000
+)
+
+//val purpose = "SALTELLI_SYNTHETIC_GRID"
+val purpose = "SALTELLI_TEST"
+
+//val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+val env = LocalEnvironment(5)
+
+val replications = Replication (
+   //evaluation = (model on env by 20 hook indics_hook),
+   evaluation = (model on env hook indics_hook),
+   seed = replication,
+   //replications = 100
+   replications = 1
+)
+
+val resdir = workDirectory / "sensitivity" / (((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))+"_"+purpose)
+
+
+SensitivitySaltelli( 
+  evaluation = model,
+  samples = 5,
+  inputs = Seq(
+    gravityDecay in (100.0,5100.0),
+    countryGravityDecay in (100.0,5100.0),
+    gammaSectors in (0.1 to 2.0),
+    gammaLinks in (0.1 to 2.0 by 0.1),
+    gammaOrigin in (0.1 to 2.0 by 0.1),
+    gammaDestination in (0.1 to 2.0 by 0.1)
+  ),
+  outputs = Seq(internationalization, metropolization, networkModularity, networkAvgCommunitySize, networkAvgDegree, networkDegreeEntropy, flowsEntropy, firmLinks)
+) hook (resdir)
