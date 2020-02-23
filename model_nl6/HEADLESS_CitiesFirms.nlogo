@@ -1,4 +1,4 @@
-extensions [matrix table nw kmeans numanal]
+extensions [matrix table nw kmeans numanal gis]
 
 __includes [
   "setup.nls"
@@ -15,6 +15,8 @@ __includes [
   "utils/List.nls"
   "utils/Statistics.nls"
   "utils/Matrix.nls"
+  "utils/File.nls"
+  "utils/String.nls"
 
 ]
 
@@ -35,6 +37,13 @@ globals [
   setup:scaling-exponent
   setup:sectors-number
   setup:sector-composition-mode
+
+  setup:cities-file
+  setup:network-file
+
+  setup:cities-data
+
+  setup:with-initial-network?
 
   ;;
   ; model parameters
@@ -61,6 +70,8 @@ globals [
   runtime:communities
   runtime:failed?
 
+  runtime:dates
+  runtime:current-date-index
 
   ;;
   ; cities
@@ -72,6 +83,7 @@ globals [
   cities:sectors-proximity-matrix
 
   world:distance-rescaling
+  world:envelope
 
 
   links:network-adjacency-matrix
@@ -82,6 +94,12 @@ globals [
   display:link-hide-threshold
 
 
+  ;;
+  ;indicators
+
+  indicators:target-country-mse
+  indicators:total-mse
+  indicators:total-mselog
 
 ]
 
@@ -94,6 +112,8 @@ cities-own [
   ; internal use (rank-size law, matrix indices)
   city:number
 
+  city:name
+
   ;;
   ; country of the city
   city:country
@@ -103,10 +123,14 @@ cities-own [
   ; max value ~ 10^11
   city:gdp
 
+  city:historical-gdp
+
   ;;
   ; firm sector composition
   ; list of size number-of-sectors
   city:sector-composition
+
+  city:historical-sectors
 
 
   ;;
@@ -118,6 +142,14 @@ cities-own [
 ]
 
 
+breed [real-cities real-city]
+
+real-cities-own[
+  real-city:number
+  real-city:year
+  real-city:country
+]
+
 directed-link-breed [firmlinks firmlink]
 
 firmlinks-own [
@@ -125,6 +157,15 @@ firmlinks-own [
   firmlink:volume
 
 ]
+
+directed-link-breed [real-firmlinks real-firmlink]
+
+real-firmlinks-own [
+ real-firmlink:volume
+ real-firmlink:year
+]
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 340
@@ -512,7 +553,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
