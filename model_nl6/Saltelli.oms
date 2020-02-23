@@ -27,11 +27,12 @@ val firmLinks = Val[Double]
 val replication = Val[Int]
 
 val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
-  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}","experiments:run-experiment")
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} (random 100000)"//${replication}"
+,"experiments:run-experiment")
 
-val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
     inputs += (setupScalingExponent,setupSectorsNumber,setupSectorsMode,finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
-      gravityDecay,countryGravityDecay,replication),
+      gravityDecay,countryGravityDecay/*,replication*/),
     outputs += internationalization mapped "indicators:internationalization",
     outputs += metropolization mapped "indicators:metropolization",
     outputs += networkModularity mapped "indicators:network-weighted-louvain-modularity",
@@ -52,27 +53,34 @@ val purpose = "SALTELLI_TEST"
 //val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
 val env = LocalEnvironment(5)
 
+/*
+// ! should aggregate for the Saltelli to work on replications -> use on stochastic model with large number of samples.
 val replications = Replication (
-   //evaluation = (model on env by 20 hook indics_hook),
-   evaluation = (model on env hook indics_hook),
+   //evaluation = (model on env by 20),
+   evaluation = (model on env),
    seed = replication,
    //replications = 100
    replications = 1
 )
+*/
 
 val resdir = workDirectory / "sensitivity" / (((new java.text.SimpleDateFormat("yyyyMMdd_HHmmss")).format(new java.util.Date()))+"_"+purpose)
 
 
 SensitivitySaltelli( 
-  evaluation = model,
+  evaluation = (model on env),//replications,
   samples = 5,
   inputs = Seq(
     gravityDecay in (100.0,5100.0),
     countryGravityDecay in (100.0,5100.0),
-    gammaSectors in (0.1 to 2.0),
-    gammaLinks in (0.1 to 2.0 by 0.1),
-    gammaOrigin in (0.1 to 2.0 by 0.1),
-    gammaDestination in (0.1 to 2.0 by 0.1)
+    gammaSectors in (0.1,2.0),
+    gammaLinks in (0.1,2.0),
+    gammaOrigin in (0.1,2.0),
+    gammaDestination in (0.1,2.0)
   ),
   outputs = Seq(internationalization, metropolization, networkModularity, networkAvgCommunitySize, networkAvgDegree, networkDegreeEntropy, flowsEntropy, firmLinks)
 ) hook (resdir)
+
+
+
+
