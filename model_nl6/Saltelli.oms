@@ -26,7 +26,7 @@ val firmLinks = Val[Double]
 
 val replication = Val[Int]
 
-val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
+val cmds = Seq("experiments:setup-experiment \"synthetic\" ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
   "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} (random 100000)"//${replication}"
 ,"experiments:run-experiment")
 
