@@ -13,6 +13,8 @@
 ;   - implement copula for data driven version and compare both
 to main:go
   
+  if ticks mod 100 = 0 [show (word "t=" ticks)]
+  
   if ticks mod runtime:city-evolution-scale = 0 and ticks > 0 [
     cities:evolve-cities
   ]

@@ -165,7 +165,6 @@ real-firmlinks-own [
  real-firmlink:year
 ]
 
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 340
