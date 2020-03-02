@@ -47,11 +47,11 @@ val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embed
     finalTime := 5000
 )
 
-//val purpose = "SALTELLI_SYNTHETIC_GRID"
-val purpose = "SALTELLI_TEST"
+val purpose = "SALTELLI_SYNTHETIC_GRID"
+//val purpose = "SALTELLI_TEST"
 
-//val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
-val env = LocalEnvironment(5)
+val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+//val env = LocalEnvironment(5)
 
 /*
 // ! should aggregate for the Saltelli to work on replications -> use on stochastic model with large number of samples.
@@ -68,8 +68,8 @@ val resdir = workDirectory / "sensitivity" / (((new java.text.SimpleDateFormat("
 
 
 SensitivitySaltelli( 
-  evaluation = (model on env),//replications,
-  samples = 5,
+  evaluation = (model on env by 20),//replications,
+  samples = 20000,
   inputs = Seq(
     gravityDecay in (100.0,5100.0),
     countryGravityDecay in (100.0,5100.0),
