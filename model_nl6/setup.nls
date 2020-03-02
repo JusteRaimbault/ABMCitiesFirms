@@ -52,8 +52,11 @@ to setup:setup-globals
   
   random-seed setup:seed
   
-  set setup:cities-file "setup/cities.csv"
-  set setup:network-file "setup/links.csv"
+  ;set setup:cities-file "setup/cities.csv"
+  ;set setup:network-file "setup/links.csv"
+  ; FUA aggreg data
+  set setup:cities-file "setup/fuacities.csv"
+  set setup:network-file "setup/fualinks.csv"
   
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
