@@ -107,7 +107,7 @@ to cities:setup-real-cities
     let y city:rescale-y read-from-string (item 4 row)
     let country read-from-string (item 5 row)
     let gdp read-from-string (item 6 row)
-    let sectors map [? -> read-from-string ?] (sublist row 6 (length row))
+    let sectors map [? -> abs (read-from-string ?)] (sublist row 7 (length row)) ; note: the abs is not necessary - negative turnover should have been filtered before
     if t = t0 [
       ask one-of cities with [city:number = id][
         set city:name name

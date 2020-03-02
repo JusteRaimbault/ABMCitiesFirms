@@ -321,7 +321,7 @@ params:gamma-origin
 params:gamma-origin
 0
 10
-0.25
+1.15
 0.05
 1
 NIL
@@ -336,7 +336,7 @@ params:gamma-destination
 params:gamma-destination
 0
 10
-0.25
+1.25
 0.05
 1
 NIL
@@ -351,7 +351,7 @@ params:gamma-links
 params:gamma-links
 0
 10
-10.0
+4.0
 0.05
 1
 NIL
@@ -366,7 +366,7 @@ params:gamma-sectors
 params:gamma-sectors
 0
 10
-1.05
+0.3
 0.05
 1
 NIL
@@ -381,7 +381,7 @@ params:gravity-decay
 params:gravity-decay
 1
 3000
-801.0
+451.0
 50
 1
 NIL
@@ -475,7 +475,7 @@ setup:sectors-number
 setup:sectors-number
 0
 100
-11.0
+10.0
 1
 1
 NIL

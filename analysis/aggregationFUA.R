@@ -180,13 +180,18 @@ dev.off()
 firms_withfuas_eu$nace_firstdigit = floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000)
 
 # ! must have indus compo by aggregating industrial sectors -> first nace digit (10)
-aggrnodes = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)) %>% group_by(eFUA_ID) %>% summarize(
+
+# one city has negative sector composition?
+#exportnodes[exportnodes$name=='Tulcea',] # -> negative turnover
+# firms_withfuas_eu[firms_withfuas_eu$turnover<0&!is.na(firms_withfuas_eu$turnover),] # -> 2281 : filter negative turnovers
+
+aggrnodes = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>% group_by(eFUA_ID) %>% summarize(
   turnover=sum(turnover)#,
   #sector0 = sum(turnover[floor(nacecode/1000)==0])/sum(turnover)
 )
 for(k in 0:9){
   show(k)
-  saggr = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)) %>%
+  saggr = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>%
     group_by(eFUA_ID) %>% summarize(sector = sum(turnover[nace_firstdigit==k])/sum(turnover))
   aggrnodes[[paste0('sector',k)]]=saggr$sector
 }
@@ -232,11 +237,15 @@ exportnodes = as.data.frame(aggrnodes)
 exportnodes$time = rep(0,nrow(exportnodes))
 exportnodes = exportnodes[,c("eFUA_ID","fuaname","time","X","Y","fuacountry","turnover",paste0("sector",0:9))]
 names(exportnodes) <- c("id","name","time","x","y","country","turnover",paste0("sector",0:9))
-as.numeric(exportnodes$country)
+# country number needed! - order by alphabetical name (do same for estimated dmat)
+exportnodes$country = as.numeric(as.factor(as.character(exportnodes$country)))
+
 
 exportlinks = as.data.frame(aggrlinks)
 exportlinks$time = rep(0,nrow(exportlinks))
 exportlinks = exportlinks[,c("from_fua","to_fua","time","weight")]
+# filter self-links
+exportlinks=exportlinks[exportlinks$from_fua!=exportlinks$to_fua,]
 
 write.table(exportlinks,file='model_nl6/setup/fualinks.csv',row.names = F,sep=";",quote = F)
 write.table(exportnodes,file='model_nl6/setup/fuacities.csv',row.names = F,sep=";",quote=F)
