@@ -11,7 +11,7 @@ to display:setup-display
   ifelse setup:setup-type != "real" [
     ask patches [set pcolor [item (city:country mod length base-colors) base-colors] of one-of cities with-min [distance myself]]
   ][
-    ask patches [set pcolor "white"] 
+    ask patches [set pcolor white] 
   ]
 end
 

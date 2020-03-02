@@ -86,6 +86,9 @@ end
 
 ;;
 ; full real data
+;
+;  Expected csv format:
+;    
 to cities:setup-real-cities
   let dates remove-duplicates map [? -> read-from-string (item 2 ?)] setup:cities-data
   set runtime:dates sort dates
@@ -96,6 +99,7 @@ to cities:setup-real-cities
 
   foreach setup:cities-data [row ->
     ;show row
+    ; "8" "Innsbruck" "0" "11.4013600495351" "47.2395134886423" "Austria" "9150809" "0" "0.0250416110750427" "0.0562737130673365" "0.224930932336146" "0.299535265133389" "0.0388406096116748" "0.199911177252197"
     let id read-from-string (item 0 row)
     let name (item 1 row)
     let t read-from-string (item 2 row)
@@ -110,19 +114,30 @@ to cities:setup-real-cities
         set city:sector-composition sectors
         set city:gdp gdp
         set city:country country 
-        setxy x y
+        ifelse x > min-pxcor and x < max-pxcor and y > min-pycor and y < max-pycor [setxy x y ][die]
+        ; dirty fix
+        ;set x (min list (max list x min-pxcor) max-pxcor) set y (min list (max list y min-pycor) max-pycor) 
+        ;setxy x y
       ]
     ]
     ; whatever the time upate hist trajs
-    ask one-of cities with [city:number = id][
-      set city:historical-gdp replace-item (position t runtime:dates) city:historical-gdp gdp
-      set city:historical-sectors replace-item (position t runtime:dates) city:historical-sectors sectors
+    if one-of cities with [city:number = id] != nobody [
+      ask one-of cities with [city:number = id][
+        set city:historical-gdp replace-item (position t runtime:dates) city:historical-gdp gdp
+        set city:historical-sectors replace-item (position t runtime:dates) city:historical-sectors sectors
+      ]
     ]
   ]
   
   set setup:sectors-number length [city:sector-composition] of one-of cities
   
-  ask cities [set label city:name set label-color grey]
+  ;ask cities [set label city:name set label-color grey]
+  
+  ; reset city id for them to correspond to matrix indices
+  ;  - store origin id in a map, used at network construction
+  let k 0
+  set cities:real-id-map table:make
+  ask cities [let id city:number set city:number k table:put cities:real-id-map k id set k k + 1]
 end
 
 
@@ -213,9 +228,11 @@ to-report city:initial-sector-composition
       
   ]
   
-  ;; TODO
+  ;;
+  ;
   if setup:setup-type = "real" [
-    error "unimplemented"
+    ; actually nothing to do - set at file reading
+    report city:sector-composition
   ]
   
 end

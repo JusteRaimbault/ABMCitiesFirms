@@ -193,7 +193,7 @@ for(k in 0:9){
 for(k in 0:9){aggrnodes[is.na(aggrnodes[,paste0('sector',k)]),paste0('sector',k)]=0}
 aggrnodes$geometry=NULL
 # export to wgs84 for gis ext in netlogo
-coords = as.tbl(data.frame(fuaid = fuas$eFUA_ID,fuacountry = fuas$Cntry_name,st_coordinates(st_transform(st_centroid(fuas),CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")))))
+coords = as.tbl(data.frame(fuaid = fuas$eFUA_ID,fuacountry = fuas$Cntry_name,fuaname=fuas$eFUA_name,st_coordinates(st_transform(st_centroid(fuas),CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")))))
 aggrnodes = left_join(aggrnodes,coords,by=c('eFUA_ID'='fuaid'))
 
 
@@ -227,12 +227,19 @@ ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5_colorMeanTurnover.
 #   x ; y ; country ; GDP ( == aggregated turnover) ;
 #   sectors (any number, as proportions)
 
+
+exportnodes = as.data.frame(aggrnodes)
+exportnodes$time = rep(0,nrow(exportnodes))
+exportnodes = exportnodes[,c("eFUA_ID","fuaname","time","X","Y","fuacountry","turnover",paste0("sector",0:9))]
+names(exportnodes) <- c("id","name","time","x","y","country","turnover",paste0("sector",0:9))
+as.numeric(exportnodes$country)
+
 exportlinks = as.data.frame(aggrlinks)
 exportlinks$time = rep(0,nrow(exportlinks))
-exportnodes = as.data.frame(aggrnodes)
+exportlinks = exportlinks[,c("from_fua","to_fua","time","weight")]
 
-write.csv(exportlinks[],file='model_nl6/setup/fualinks.csv',row.names = F)
-write.csv(as.data.frame(),file='model_nl6/setup/fuacities.csv',row.names = F)
+write.table(exportlinks,file='model_nl6/setup/fualinks.csv',row.names = F,sep=";",quote = F)
+write.table(exportnodes,file='model_nl6/setup/fuacities.csv',row.names = F,sep=";",quote=F)
 
 
 
