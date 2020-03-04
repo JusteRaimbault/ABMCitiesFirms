@@ -34,12 +34,12 @@ to display:update-display
     ]
   ]
   
-  ifelse count firmlinks > 0 [set ma max [firmlink:volume] of firmlinks][set ma 0]
+  ifelse count firmlinks > 0 [set ma max [link:volume] of firmlinks][set ma 0]
   ask firmlinks [
     ifelse ma < 30 [
-      set thickness firmlink:volume / 10 
+      set thickness link:volume / 10 
     ][
-      set thickness 3 * firmlink:volume / ma
+      set thickness 3 * link:volume / ma
     ]
   ]
   
@@ -60,10 +60,12 @@ end
 ;;
 ;
 to display:toggle-links
+  
   ifelse count firmlinks with [hidden? = true] > 0 [
     ask firmlinks [set hidden? false] 
   ][
-    let q utils:statistics:quantile ([firmlink:volume] of firmlinks) display:link-hide-threshold
-    ask firmlinks with [firmlink:volume <= q][set hidden? true]
+    ask firmlinks [set hidden? false]
+    let q utils:statistics:quantile ([link:volume] of firmlinks) display:link-hide-threshold
+    ask firmlinks with [link:volume <= q][set hidden? true]
   ]
 end

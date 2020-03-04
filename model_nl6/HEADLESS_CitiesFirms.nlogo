@@ -45,6 +45,8 @@ globals [
 
   setup:with-initial-network?
 
+  setup:soc-distmat-file
+
   ;;
   ; model parameters
   params:gamma-origin
@@ -81,6 +83,8 @@ globals [
   cities:geo-distance-matrix
   cities:soc-distance-matrix
   cities:sectors-proximity-matrix
+
+  cities:real-id-map
 
   world:distance-rescaling
   world:envelope
@@ -152,24 +156,27 @@ real-cities-own[
 
 directed-link-breed [firmlinks firmlink]
 
+links-own [
+  link:volume
+]
+
 firmlinks-own [
 
-  firmlink:volume
+  ;firmlink:volume
 
 ]
 
 directed-link-breed [real-firmlinks real-firmlink]
 
 real-firmlinks-own [
- real-firmlink:volume
+ ;real-firmlink:volume
  real-firmlink:year
 ]
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 340
 13
-951
+1182
 625
 -1
 -1
@@ -184,7 +191,7 @@ GRAPHICS-WINDOW
 0
 1
 0
-200
+277
 0
 200
 0
@@ -200,6 +207,23 @@ BUTTON
 99
 test experiment
 experiments:test-experiment
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+73
+111
+160
+144
+test calib
+experiments:test-experiment-calibration
 NIL
 1
 T

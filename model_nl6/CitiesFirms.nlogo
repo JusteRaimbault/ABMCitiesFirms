@@ -40,6 +40,8 @@ globals [
   setup:cities-file
   setup:cities-data
 
+  setup:soc-distmat-file
+
   ;;
   ; format of network csv: id_origin;id_destination;year;date
   setup:network-file
@@ -82,6 +84,8 @@ globals [
   links:network-adjacency-matrix
   ;links:link-proba-list
   links:link-utilities-matrix
+
+
 
 
   ;;
@@ -149,16 +153,21 @@ real-cities-own[
 
 directed-link-breed [firmlinks firmlink]
 
+links-own [
+  link:volume
+]
+
 firmlinks-own [
 
-  firmlink:volume
+  ; common variable to both types of links
+  ;firmlink:volume
 
 ]
 
 directed-link-breed [real-firmlinks real-firmlink]
 
 real-firmlinks-own [
- real-firmlink:volume
+ ;real-firmlink:volume
  real-firmlink:year
 ]
 
@@ -321,7 +330,7 @@ params:gamma-origin
 params:gamma-origin
 0
 10
-1.15
+1.0
 0.05
 1
 NIL
@@ -336,7 +345,7 @@ params:gamma-destination
 params:gamma-destination
 0
 10
-1.25
+1.0
 0.05
 1
 NIL
@@ -351,7 +360,7 @@ params:gamma-links
 params:gamma-links
 0
 10
-4.0
+5.0
 0.05
 1
 NIL
@@ -366,7 +375,7 @@ params:gamma-sectors
 params:gamma-sectors
 0
 10
-0.3
+0.1
 0.05
 1
 NIL
@@ -381,7 +390,7 @@ params:gravity-decay
 params:gravity-decay
 1
 3000
-451.0
+501.0
 50
 1
 NIL
@@ -396,7 +405,7 @@ params:country-gravity-decay
 params:country-gravity-decay
 1
 50000
-5951.0
+2.0
 50
 1
 NIL
@@ -411,7 +420,7 @@ runtime:city-evolution-scale
 runtime:city-evolution-scale
 1
 10000
-4181.0
+1500.0
 10
 1
 NIL
@@ -475,7 +484,7 @@ setup:sectors-number
 setup:sectors-number
 0
 100
-10.0
+21.0
 1
 1
 NIL
@@ -490,7 +499,7 @@ display:link-hide-threshold
 display:link-hide-threshold
 0
 1
-0.0
+0.1
 0.05
 1
 NIL

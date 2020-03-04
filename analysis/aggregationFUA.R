@@ -7,6 +7,8 @@ library(dplyr)
 library(cartography)
 library(ggplot2)
 
+source('analysis/functions.R')
+
 
 ##########
 # 1) FUA / links overlay
@@ -15,6 +17,9 @@ library(ggplot2)
 #fuas <- st_read('Data/UI-boundaries-FUA/','FUA_Boundaries')
 fuas <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.gpkg'))
 #fuas <- st_transform(fuas,CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) # NO - transform the points to fuas
+
+ucdb <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/JRC_EC/GHS/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp'))
+ucdb <- st_transform(ucdb,st_crs(fuas))
 
 countries <- st_read('Data/','countries')
 #countries <- st_transform(countries,st_crs(fuas)) #makes no sense at this scale
@@ -28,6 +33,11 @@ firmpoints <- st_transform(st_as_sf(rawfirmpoints),st_crs(fuas))
 
 # overlay with fuas
 firmfuas = st_join(firmpoints,fuas,join=st_within)
+
+# overlay ucdb with fuas for pop/gdp properties
+ucdbfuas = st_join(ucdb,fuas,join=st_within)
+
+
 
 # Filter 
 #firms_withfuas <- firmfuas %>% filter(!is.na(FUA_CODE))
@@ -102,7 +112,7 @@ linkfuas$to_fua=as.character(linkfuas$to_fua)
 # save for further analysis
 #save(firmpoints,firmfuas,firms_withfuas,linkfuas,file='Data/firms/amadeus_aggregFUA.RData')
 save(firmpoints,firmfuas,firms_withfuas,firms_withfuas_eu,linkfuas,file='Data/firms/amadeus_aggregGHSFUA.RData')
-
+#load(file='Data/firms/amadeus_aggregGHSFUA.RData')
 
 # where do links go ?
 #linkcountries = left_join(firmlinks,firmcountries[!duplicated(firmcountries$id),c('id','CNTR_ID')],by=c('from'='id'));names(linkcountries)[6]="from_country"
@@ -127,25 +137,167 @@ links = linkfuas[!is.na(linkfuas$from_fua)&!is.na(linkfuas$to_fua),]
 links = links[!is.na(links$to_turnover)&!is.na(links$proportion),]
 
 
+####
+# ! not needed, as year link info is crap
 # links can be aggregated by o-d and year
-aggrlinksyear <- linkfuas %>% group_by(from_fua,to_fua,year,.drop=T) %>% summarize(weight = sum(proportion*to_turnover))
+#aggrlinksyear <- linkfuas %>% group_by(from_fua,to_fua,year,.drop=T) %>% summarize(weight = sum(proportion*to_turnover))
 #summary(aggrlinks[aggrlinks$year=="2018",])
-aggrlinksyear = aggrlinksyear[!is.na(aggrlinksyear$from_fua)&!is.na(aggrlinksyear$to_fua)&!is.na(aggrlinksyear$year)&!is.na(aggrlinksyear$weight),]
-aggrlinksyear$dummy=rep("link",nrow(aggrlinksyear))
+#aggrlinksyear = aggrlinksyear[!is.na(aggrlinksyear$from_fua)&!is.na(aggrlinksyear$to_fua)&!is.na(aggrlinksyear$year)&!is.na(aggrlinksyear$weight),]
+#aggrlinksyear$dummy=rep("link",nrow(aggrlinksyear))
 
 
-aggrlinks <- links %>% group_by(from_fua,to_fua) %>% summarize(weight = sum(proportion*to_turnover))
-
+# Aggregate links
+aggrlinks <- links %>% filter(to_turnover>0) %>% group_by(from_fua,to_fua) %>% summarize(weight = sum(proportion*to_turnover))
 
 
 # year repartition is shitty
-table(links$year)
-length(which(duplicated(links[,c("from","to")]))) # too few replicated links to have double observations
+#table(links$year)
+#length(which(duplicated(links[,c("from","to")]))) # too few replicated links to have double observations
 # -> dynamical info can not really be used ?
 # -> fit the model from empty network ('stationary state') ?
 
+
+
+######
+# network analysis
+#  -> modularities of countries, of NUTS
+#  -> Louvain communities
+#timeaggrlinks = aggrlinks
+
+# unique(floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000))
+# ! NO first digit does not mean anything: either first level (letter), or two first digits
+#firms_withfuas_eu$nace_firstdigit = floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000)
+getNaceFirstLevel <- function(code){
+  digs = floor(as.numeric(as.character(code))/100)
+  if(!is.numeric(digs)){show(as.character(code));return(NA)}
+  if(is.na(digs)){show(as.character(code));return(NA)}
+  if(digs>1&digs<=3){return('A')}
+  if(digs>3&digs<=9){return('B')}
+  if(digs>9&digs<=33){return('C')}
+  if(digs==35){return('D')}
+  if(digs>35&digs<=39){return('E')}
+  if(digs>39&digs<=43){return('F')}
+  if(digs>43&digs<=47){return('G')}
+  if(digs>47&digs<=53){return('H')}
+  if(digs>53&digs<=56){return('I')}
+  if(digs>56&digs<=63){return('J')}
+  if(digs>63&digs<=66){return('K')}
+  if(digs==68){return('L')}
+  if(digs>68&digs<=75){return('M')}
+  if(digs>75&digs<=82){return('N')}
+  if(digs==84){return('O')}
+  if(digs==85){return('P')}
+  if(digs>85&digs<=88){return('Q')}
+  if(digs>88&digs<=93){return('R')}
+  if(digs>93&digs<=96){return('S')}
+  if(digs>96&digs<=98){return('T')}
+  if(digs==99){return('U')}
+  return(NA)
+}
+firms_withfuas_eu$nace_firstdigit = sapply(firms_withfuas_eu$nacecode,getNaceFirstLevel)
+firms_withfuas_eu$nace_firstdigit = unlist(firms_withfuas_eu$nace_firstdigit)
+
+# ! must have indus compo by aggregating industrial sectors -> first nace digit (10)
+
+# one city has negative sector composition?
+#exportnodes[exportnodes$name=='Tulcea',] # -> negative turnover
+# firms_withfuas_eu[firms_withfuas_eu$turnover<0&!is.na(firms_withfuas_eu$turnover),] # -> 2281 : filter negative turnovers
+
+aggrnodes = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>% group_by(eFUA_ID) %>% summarize(
+  turnover=sum(turnover)#,
+  #sector0 = sum(turnover[floor(nacecode/1000)==0])/sum(turnover)
+)
+for(k in unique(firms_withfuas_eu$nace_firstdigit[!is.na(firms_withfuas_eu$nace_firstdigit)])){
+  show(k)
+  saggr = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>%
+    group_by(eFUA_ID) %>% summarize(sector = sum(turnover[nace_firstdigit==k])/sum(turnover))
+  aggrnodes[[paste0('sector',k)]]=saggr$sector
+}
+for(k in unique(firms_withfuas_eu$nace_firstdigit[!is.na(firms_withfuas_eu$nace_firstdigit)])){aggrnodes[is.na(aggrnodes[,paste0('sector',k)]),paste0('sector',k)]=0}
+aggrnodes$geometry=NULL
+# export to wgs84 for gis ext in netlogo
+coords = as.tbl(data.frame(fuaid = fuas$eFUA_ID,fuacountry = fuas$Cntry_name,fuaname=fuas$eFUA_name,st_coordinates(st_transform(st_centroid(fuas),CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")))))
+aggrnodes = left_join(aggrnodes,coords,by=c('eFUA_ID'='fuaid'))
+names(aggrnodes)[1]='fua'
+aggrnodes$fua = as.character(aggrnodes$fua)
+
+# bug in aggreg? ! all fuas should have sectors summing to 1 as all companies have nace digits!
+#aggrnodes[rowSums(aggrnodes[,3:12])==0,]
+#faggr = firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42,]
+#firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42&firms_withfuas_eu$nace_firstdigit==4,]
+
+sectornames = paste0('sector',unique(firms_withfuas_eu$nace_firstdigit[!is.na(firms_withfuas_eu$nace_firstdigit)]))
 ##
-# try basic flow map
+# histograms (clustered) of sector profiles
+km = kmeans(aggrnodes[,sectornames],centers = 5,nstart = 100)
+aggrnodes$cluster = km$cluster
+clustsizes = aggrnodes%>% group_by(cluster) %>% summarize(turnover=mean(turnover))
+lcentroids = data.frame()
+for(k in sectornames){lcentroids=rbind(lcentroids,data.frame(prop=km$centers[,k],sector=rep(k,nrow(km$centers)),centre=1:nrow(km$centers),size=clustsizes$turnover))}
+g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=as.character(centre),group=as.character(centre)))
+g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
+ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5.png',width=20,height=18,units='cm')
+
+g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=log(size),group=as.character(centre)))
+g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
+ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5_colorMeanTurnover.png',width=20,height=18,units='cm')
+# ! -> largest city have the sctor 9 profile - slightly smallest flat to the right, smaller peaks
+# -> heuristic for synthetic sectors ~ relevant !
+
+
+####
+# export aggrlinks and aggrnodes for model calibration
+
+# extent for real world size
+bb=st_bbox(fuas[fuas$eFUA_ID%in%aggrnodes$eFUA_ID,])
+(bb$xmax - bb$xmin)/1000 # -> 4541km
+(bb$ymax - bb$ymin)/1000 # -> 3977km
+
+# netlogo format is
+#   id ; name ; time (=> set to t0 in "static network", i.e. start from no network and try to reproduce final network, configuration)
+#   x ; y ; country ; GDP ( == aggregated turnover) ;
+#   sectors (any number, as proportions)
+
+
+exportnodes = as.data.frame(aggrnodes)
+exportnodes$time = rep(0,nrow(exportnodes))
+exportnodes = exportnodes[,c("eFUA_ID","fuaname","time","X","Y","fuacountry","turnover",sectornames)]
+names(exportnodes) <- c("id","name","time","x","y","country","turnover",sectornames)
+# country number needed! - order by alphabetical name (do same for estimated dmat)
+exportnodes$country = as.numeric(as.factor(as.character(exportnodes$country)))
+
+
+exportlinks = as.data.frame(aggrlinks)
+exportlinks$time = rep(0,nrow(exportlinks))
+exportlinks = exportlinks[,c("from_fua","to_fua","time","weight")]
+# filter self-links
+exportlinks=exportlinks[exportlinks$from_fua!=exportlinks$to_fua,]
+
+# export for NetLogo
+write.table(exportlinks,file='model_nl6/setup/fualinks.csv',row.names = F,sep=";",quote = F)
+write.table(exportnodes,file='model_nl6/setup/fuacities.csv',row.names = F,sep=";",quote=F)
+
+# save aggreg
+save(aggrnodes, aggrlinks, exportnodes, exportlinks, file='Data/firms/amadeus_aggregnw.RData')
+
+
+######
+## Correlation betweem turnover and UCDB properties
+
+# ! if scaling law, no pearson corr -> use rank corr !
+
+sucdb = ucdbfuas %>% filter(!is.na(eFUA_ID)) %>% group_by(eFUA_ID) %>% summarize(pop=sum(P15),gdp=sum(GDP15_SM))
+saggrnodes = left_join(aggrnodes,sucdb,by=c('eFUA_ID'='eFUA_ID'))
+
+cor.test(saggrnodes$turnover,saggrnodes$pop,method='pearson')
+cor.test(saggrnodes$turnover,saggrnodes$pop,method='spearman')
+
+cor.test(saggrnodes$turnover,saggrnodes$gdp,method='pearson')
+cor.test(saggrnodes$turnover,saggrnodes$gdp,method='spearman')
+
+
+######
+##  try basic flow map
 currentlinks = aggrlinks[aggrlinks$weight>quantile(aggrlinks$weight,c(0.97)),]
 linkLayer <- getLinkLayer(x=fuas,xid='FUA_CODE',df=currentlinks,dfid = c("from_fua","to_fua"))
 #osm <- getTiles(x = countries, type = "osm", zoom = 11, crop = TRUE)
@@ -170,118 +322,85 @@ gradLinkTypoLayer(
 dev.off()
 
 
-######
-# network analysis
-#  -> modularities of countries, of NUTS
-#  -> Louvain communities
-#timeaggrlinks = aggrlinks
-
-# unique(floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000))
-firms_withfuas_eu$nace_firstdigit = floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000)
-
-# ! must have indus compo by aggregating industrial sectors -> first nace digit (10)
-
-# one city has negative sector composition?
-#exportnodes[exportnodes$name=='Tulcea',] # -> negative turnover
-# firms_withfuas_eu[firms_withfuas_eu$turnover<0&!is.na(firms_withfuas_eu$turnover),] # -> 2281 : filter negative turnovers
-
-aggrnodes = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>% group_by(eFUA_ID) %>% summarize(
-  turnover=sum(turnover)#,
-  #sector0 = sum(turnover[floor(nacecode/1000)==0])/sum(turnover)
-)
-for(k in 0:9){
-  show(k)
-  saggr = firms_withfuas_eu %>% filter(!is.na(turnover)&!is.na(nace_firstdigit)&turnover>0) %>%
-    group_by(eFUA_ID) %>% summarize(sector = sum(turnover[nace_firstdigit==k])/sum(turnover))
-  aggrnodes[[paste0('sector',k)]]=saggr$sector
-}
-for(k in 0:9){aggrnodes[is.na(aggrnodes[,paste0('sector',k)]),paste0('sector',k)]=0}
-aggrnodes$geometry=NULL
-# export to wgs84 for gis ext in netlogo
-coords = as.tbl(data.frame(fuaid = fuas$eFUA_ID,fuacountry = fuas$Cntry_name,fuaname=fuas$eFUA_name,st_coordinates(st_transform(st_centroid(fuas),CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")))))
-aggrnodes = left_join(aggrnodes,coords,by=c('eFUA_ID'='fuaid'))
-
-
-# bug in aggreg? ! all fuas should have sectors summing to 1 as all companies have nace digits!
-#aggrnodes[rowSums(aggrnodes[,3:12])==0,]
-#faggr = firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42,]
-#firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42&firms_withfuas_eu$nace_firstdigit==4,]
-
-##
-# histograms (clustered) of sector profiles
-km = kmeans(aggrnodes[,3:12],centers = 5,nstart = 100)
-aggrnodes$cluster = km$cluster
-clustsizes = aggrnodes%>% group_by(cluster) %>% summarize(turnover=mean(turnover))
-lcentroids = data.frame();for(k in 1:10){lcentroids=rbind(lcentroids,data.frame(prop=km$centers[,k],sector=rep(k,nrow(km$centers)),centre=1:nrow(km$centers),size=clustsizes$turnover))}
-g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=as.character(centre),group=as.character(centre)))
-g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
-ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5.png',width=20,height=18,units='cm')
-
-g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=log(size),group=as.character(centre)))
-g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
-ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5_colorMeanTurnover.png',width=20,height=18,units='cm')
-# ! -> largest city have the sctor 9 profile - slightly smallest flat to the right, smaller peaks
-# -> heuristic for synthetic sectors ~ relevant !
-
-
-####
-# export aggrlinks and aggrnodes for model calibration
-
-# netlogo format is
-#   id ; name ; time (=> set to t0 in "static network", i.e. start from no network and try to reproduce final network, configuration)
-#   x ; y ; country ; GDP ( == aggregated turnover) ;
-#   sectors (any number, as proportions)
-
-
-exportnodes = as.data.frame(aggrnodes)
-exportnodes$time = rep(0,nrow(exportnodes))
-exportnodes = exportnodes[,c("eFUA_ID","fuaname","time","X","Y","fuacountry","turnover",paste0("sector",0:9))]
-names(exportnodes) <- c("id","name","time","x","y","country","turnover",paste0("sector",0:9))
-# country number needed! - order by alphabetical name (do same for estimated dmat)
-exportnodes$country = as.numeric(as.factor(as.character(exportnodes$country)))
-
-
-exportlinks = as.data.frame(aggrlinks)
-exportlinks$time = rep(0,nrow(exportlinks))
-exportlinks = exportlinks[,c("from_fua","to_fua","time","weight")]
-# filter self-links
-exportlinks=exportlinks[exportlinks$from_fua!=exportlinks$to_fua,]
-
-write.table(exportlinks,file='model_nl6/setup/fualinks.csv',row.names = F,sep=";",quote = F)
-write.table(exportnodes,file='model_nl6/setup/fuacities.csv',row.names = F,sep=";",quote=F)
-
 
 
 
 #######
+## Network Analysis
 
 library(igraph)
 library(Matrix)
 library(reshape2)
+library(poweRlaw)
 
 g = graph_from_data_frame(aggrlinks,directed = T,vertices = aggrnodes)
 V(g)$lon = (V(g)$X - min(V(g)$X)) / (max(V(g)$X) - min(V(g)$X))
 V(g)$lat = (V(g)$Y - min(V(g)$Y)) / (max(V(g)$Y) - min(V(g)$Y))
 write_graph(g,file='Results/EmpiricalNetwork/fua_graph.gml',format='gml')
 
+
+# Centralities 
+mean(degree(g))
+mean(strength(g))
+plot(log(1:length(V(g))),sort(log(strength(g)),decreasing = T))
+plot(log(1:length(V(g))),sort(log(strength(g,mode='in')),decreasing = T))
+plot(log(1:length(V(g))),sort(log(strength(g,mode='out')),decreasing = T))
+# roughly the same! balance in/out ?
+summary(strength(g,mode='in')/strength(g,mode='out'))
+
+# degree distribution (remove 2 zeros: fuas with no links)
+fitdeg = fitDistrPowerLaw(strength(g)[strength(g)>0],'Weighted degree',file='Results/EmpiricalNetwork/degreeDistr.png')
+#get_distance_statistic(fitdeg$powerlaw)
+#get_distance_statistic(fitdeg$ln)
+fitDistrPowerLaw(strength(g,mode='in')[strength(g,mode='in')>0],'Weighted in-degree',file='Results/EmpiricalNetwork/in-degreeDistr.png')
+fitDistrPowerLaw(strength(g,mode='out')[strength(g,mode='out')>0],'Weighted out-degree',file='Results/EmpiricalNetwork/out-degreeDistr.png')
+
+# edge weight distribution
+fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='Results/EmpiricalNetwork/edgeweight.png')
+
+# centrality distrib: bw? # ! makes not much sense in practice
+
+
+
+# Communities
 A = get.adjacency(g,sparse = T)
 g_undir = graph_from_adjacency_matrix(adjmatrix = (A+t(A))/2,weighted = T,mode = "undirected")
 communities_clauset = cluster_fast_greedy(g_undir)
 communities_louvain = cluster_louvain(g_undir) 
 # 0.35 modularity in both cases
 
+# directed mod
+directedmodularity(communities_clauset$membership,A) # 0.3436751
+directedmodularity(communities_louvain$membership,A) # 0.3577386
+
+# countries mod
+directedmodularity(V(g)$fuacountry,A) # 0.3200182
+
+# null model with 30 random communities
+bnum=1000; mods = c()
+for(b in 1:bnum){
+  if(b%%100==0){show(b)}
+  mods=append(mods,directedmodularity(sample.int(30,size=length(V(g)),replace = T),A))
+}
+mean(mods);sd(mods)
+
+# overlap between countries / communities
+
 
 ###
-# tests for statistical analysis
-aggrlinks = left_join(aggrlinks,aggrnodes[,c("FUA_CODE","turnover","fuacountry")],by=c('from_fua'='FUA_CODE'));names(aggrlinks)[4:5]<-c("from_turnover","from_country")
-aggrlinks = left_join(aggrlinks,aggrnodes[,c("FUA_CODE","turnover","fuacountry")],by=c('to_fua'='FUA_CODE'));names(aggrlinks)[6:7]<-c("to_turnover","to_country")
+# Statistical analysis
+
+# construct flow data
+aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('from_fua'='fua'));names(aggrlinks)[4:5]<-c("from_turnover","from_country")
+aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('to_fua'='fua'));names(aggrlinks)[6:7]<-c("to_turnover","to_country")
 
 # ! still link with zero weight ?
 
 # add geo distance
 dists = spDists(as.matrix(aggrnodes[,c("X","Y")]))
-rownames(dists)<- aggrnodes$FUA_CODE;colnames(dists)<- aggrnodes$FUA_CODE
+rownames(dists)<- aggrnodes$fua;colnames(dists)<- aggrnodes$fua
 distsdf = melt(dists)
+distsdf$Var1=as.character(distsdf$Var1);distsdf$Var2=as.character(distsdf$Var2)
 aggrlinks=left_join(aggrlinks,distsdf,by=c("from_fua"="Var1","to_fua"="Var2"));names(aggrlinks)[8]<-"distance"
 
 d = aggrlinks[aggrlinks$distance>0&aggrlinks$weight>0&aggrlinks$from_turnover>0&aggrlinks$to_turnover>0,]
@@ -289,6 +408,7 @@ d = aggrlinks[aggrlinks$distance>0&aggrlinks$weight>0&aggrlinks$from_turnover>0&
 summary(lm(data=d,log(weight)~log(distance)))
 ols <- lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover))
 summary(ols)
+mean(ols$residuals^2)
 
 ### consider
 # - poisson models?
@@ -298,7 +418,7 @@ summary(poisson)
 
 # - fixed effects similar to constrained spatial interaction models! (check practical 2-3 spInt)
 
-# country fixed effect by hand
+# country fixed effect by hand - ! this is not a fixed effect, should construct dummies to do it by hand
 summary(lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+from_country+to_country))
 # pair fixed effect
 summary(lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+paste0(from_country,to_country)))
@@ -306,15 +426,37 @@ summary(lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+
 library(nlme)
 lmList(data=d,(log(weight)~log(distance)+log(from_turnover)+log(to_turnover) | from_country))
 
-# fixed effect
+##
+# fixed effect with the plm library
 library(plm) # ! for panel data - we have no time here - country as individual, fua as realizations
 # see https://rstudio-pubs-static.s3.amazonaws.com/372492_3e05f38dd3f248e89cdedd317d603b9a.html#1_preliminaries
-plinks = plm::pdata.frame(d,index = c("from_country"))
-fixed <- plm(log(weight)~log(distance)+log(from_turnover)+log(to_turnover), data=plinks, model="within")
+d$fromto = paste0(d$from_country,d$to_country)
+plinks = plm::pdata.frame(d,index = c("fromto"))
+fixed <- plm(log(weight)~log(distance)+log(from_turnover)+log(to_turnover), data=plinks, model="within", effect="individual")
 summary(fixed)
-sfixef(fixed)
+fixef(fixed)
 pFtest(fixed, ols)
 
+# export fixed effects for ABM
+dcult = - fixef(fixed)
+allcountries = unique(c(as.character(d$from_country),as.character(d$to_country)))
+origs=c();dests=c();dcults=c()
+for(ocountry in allcountries){
+  for(dcountry in allcountries){
+    dcults=append(dcults,dcult[paste0(ocountry,dcountry)])
+    origs=append(origs,ocountry);dests=append(dests,dcountry)
+  }
+}
+dcultdf = data.frame(from_country = origs,to_country=dests,distance=dcults)
+dcultdf$distance[is.na(dcultdf$distance)]=1000 # force no links for couples of countries where actually no link
+# country names as indices
+dcultdf$from_country=as.numeric(dcultdf$from_country) # actually 29 levels - ok
+dcultdf$to_country=as.numeric(dcultdf$to_country)
+write.table(dcultdf,file='model_nl6/setup/fixedeffects.csv',row.names = F,sep=";",quote = F)
+
+
+###
+# random effects?
 random <- plm(log(weight)~log(distance)+log(from_turnover)+log(to_turnover), data=plinks, model="random")
 summary(random)
 ranef(random)

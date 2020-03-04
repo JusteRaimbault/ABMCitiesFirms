@@ -58,10 +58,16 @@ to setup:setup-globals
   set setup:cities-file "setup/fuacities.csv"
   set setup:network-file "setup/fualinks.csv"
   
+  set setup:soc-distmat-file "setup/fixedeffects.csv"
+  
   set setup:countries-number 20
   set setup:max-gdp (10 ^ 11)
 
   set indicators:target-country-mse (list 28)
+  
+  ; rescaling for real distances
+  set setup:region-width 4500
+  set world:distance-rescaling setup:region-width / world-width
   
 end
 
@@ -97,8 +103,6 @@ to setup:setup-world
     resize-world 0 200 0 200
     
     set setup:cities-number 700
-    set setup:region-width 3000
-    set world:distance-rescaling setup:region-width / world-width
     
   ]
   if setup:setup-type = "real" [
@@ -173,21 +177,27 @@ to setup:setup-distance-matrices
   let dxij matrix:minus xi xj let dyij matrix:minus yi yj
   set cities:geo-distance-matrix matrix:map [? -> world:distance-rescaling * sqrt ?] (matrix:plus (matrix:times-element-wise dxij dxij) (matrix:times-element-wise dyij dyij))
   
-  ;; TODO here - case of real estimated country distance
-  
-  let countrynums remove-duplicates [city:country] of cities
-  let centroids table:make
-  foreach countrynums [c -> let xc mean [xcor] of cities with [city:country = c] let yc mean [ycor] of cities with [city:country = c] table:put centroids c (list xc yc)]
-  ; distance between centroids
   let countrydist table:make
-  foreach countrynums [c1 -> let p1 patch (item 0 table:get centroids c1) (item 1 table:get centroids c1)
-    foreach countrynums [c2 -> let p2 patch (item 0 table:get centroids c2) (item 1 table:get centroids c2)
-      ask p1 [table:put countrydist (list c1 c2) (world:distance-rescaling * distance p2)]
+  ifelse setup:setup-type != "real" [
+    let countrynums remove-duplicates [city:country] of cities
+    let centroids table:make
+    foreach countrynums [c -> let xc mean [xcor] of cities with [city:country = c] let yc mean [ycor] of cities with [city:country = c] table:put centroids c (list xc yc)]
+    ; distance between centroids    
+    foreach countrynums [c1 -> let p1 patch (item 0 table:get centroids c1) (item 1 table:get centroids c1)
+      foreach countrynums [c2 -> let p2 patch (item 0 table:get centroids c2) (item 1 table:get centroids c2)
+        ask p1 [table:put countrydist (list c1 c2) (world:distance-rescaling * distance p2)]
+      ]
     ]
+  ][
+    ; case of real estimated country distance
+    let distdf but-first utils:file:read-csv setup:soc-distmat-file ";"
+    foreach distdf [ row ->
+      table:put countrydist (list (read-from-string (item 0 row)) (read-from-string (item 1 row))) (read-from-string (item 2 row))
+    ]
+    ;show countrydist
   ]
   let citycountries map [? -> [city:country] of ?] orderedcities let ci matrix:from-row-list (utils:list:rep citycountries (length orderedcities)) let cj matrix:from-column-list (utils:list:rep citycountries (length orderedcities))
   set cities:soc-distance-matrix (matrix:map [[c1 c2] -> table:get countrydist (list c1 c2)] ci cj)
-  
   
   
 end
@@ -221,7 +231,7 @@ to setup:setup-initial-network
       if origin != nobody and destination != nobody [
         ask origin [
           if not out-real-firmlink-neighbor? destination [
-            create-real-firmlink-to destination [set hidden? true set real-firmlink:volume weight set real-firmlink:year year]
+            create-real-firmlink-to destination [set hidden? true set link:volume weight set real-firmlink:year year]
           ]
         ]
       ]
@@ -233,13 +243,13 @@ to setup:setup-initial-network
       let t0 min runtime:dates
       ask real-firmlinks with [real-firmlink:year = t0] [
         let ro end1 let origin one-of cities with-min [distance ro] let rd end2 let destination one-of cities with-min [distance rd]
-        let w real-firmlink:volume
+        let w link:volume
         ask origin [
           ifelse not out-firmlink-neighbor? destination [
-            create-firmlink-to destination [links:new-link set firmlink:volume w]
+            create-firmlink-to destination [links:new-link set link:volume w]
           ][
             ; should not have duplicates in the links file
-            ask one-of (my-out-firmlinks with [end2 = destination]) [set firmlink:volume firmlink:volume + w]
+            ask one-of (my-out-firmlinks with [end2 = destination]) [set link:volume link:volume + w]
           ]
         ]
      ]

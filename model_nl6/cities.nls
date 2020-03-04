@@ -137,7 +137,7 @@ to cities:setup-real-cities
   ;  - store origin id in a map, used at network construction
   let k 0
   set cities:real-id-map table:make
-  ask cities [let id city:number set city:number k table:put cities:real-id-map k id set k k + 1]
+  ask cities [let id city:number set city:number k table:put cities:real-id-map id k set k k + 1]
 end
 
 
@@ -272,7 +272,7 @@ end
 ;;
 ; weighted degree of a city
 to-report city:weighted-degree
-  report sum [firmlink:volume] of my-firmlinks
+  report sum [link:volume] of my-firmlinks
 end
 
 

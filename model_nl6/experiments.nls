@@ -63,3 +63,10 @@ to experiments:test-experiment
   experiments:run-experiment
   indicators:compute-indicators
 end
+
+to experiments:test-experiment-calibration
+  experiments:setup-experiment "real" 1.0 21 "log-normal" 1000 0.5 0.5 0.5 0.5 500.0 0.1 1388528261
+  experiments:run-experiment
+  show (word "mse log = " indicators:mse-log)
+  show (word "log mse = " indicators:log-mse)
+end

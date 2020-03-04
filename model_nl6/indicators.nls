@@ -63,14 +63,14 @@ end
 to-report indicators:current-mse-weights [countries year with-log?]
   let mse 0
   ask real-firmlinks with [((member? [real-city:country] of end1 countries) or (member? [real-city:country] of end2 countries)) and real-firmlink:year = year] [
-    let o end1 let d end2 let origin one-of (cities with-min [distance o]) let destination one-of (cities with-min [distance d]) let weight real-firmlink:volume
+    let o end1 let d end2 let origin one-of (cities with-min [distance o]) let destination one-of (cities with-min [distance d]) let weight link:volume
     let pot-real-link one-of (firmlinks with [end1 = origin and end2 = destination])
     ifelse pot-real-link != nobody [
       ask pot-real-link [
         ifelse with-log? = false [
-          set mse mse + (weight - firmlink:volume)^ 2
+          set mse mse + (weight - link:volume)^ 2
         ][
-          set mse mse + (ln weight - ln firmlink:volume)^ 2
+          set mse mse + (ln weight - ln link:volume)^ 2
         ]
       ]
     ][
@@ -88,6 +88,44 @@ to-report indicators:current-mse-weights [countries year with-log?]
   ]
 end
 
+
+to-report indicators:log-zero [phi]
+  ifelse phi = 0 [report 0][report ln phi]
+end
+
+;;
+; for a non temporal network (takes all real links)
+;
+; Rescaling: if MSE = <(log phi_ij - log \hat{phi}_ij)^2>, rescaling estimated flows by k0 is minimized at
+;      k0 = <log phi_ij> - <log \hat{phi}_ij>
+;  (similar to constant in the linear regression)
+to-report indicators:mse-log
+  let realmatrix links:adjacency-matrix real-firmlinks
+  let simmatrix links:adjacency-matrix firmlinks
+  let N item 0 matrix:dimensions realmatrix
+  let logphi matrix:map realmatrix [phi -> indicators:log-zero phi]
+  let logphihat matrix:map simmatrix [phi -> indicators:log-zero phi]
+  ; compute rescaling constant
+  let k0 ((sum map sum matrix:to-row-list logphi) / (N * N)) - ((sum map sum matrix:to-row-list logphihat) / (N * N))
+  let diffmat matrix:minus logphi logphihat
+  let squares matrix:map diffmat [d -> (d - k0)^ 2]
+  report (sum map sum matrix:to-row-list squares) / (N * N)
+end
+
+;;
+; log mse - in that case, rescaling is optimal at 
+;    k0 = <phi_ij \hat{phi}_ij> / <\hat{phi}_ij ^2>
+to-report indicators:log-mse
+  let realmatrix links:adjacency-matrix real-firmlinks
+  let simmatrix links:adjacency-matrix firmlinks
+  ; note: could have globals to avoid recomputing - fine, O(|Links|)
+  let N item 0 matrix:dimensions realmatrix
+  let phihatsquared (sum map sum matrix:to-row-list (matrix:map simmatrix [phi -> phi ^ 2])) / (N * N)
+  let phiphihat (sum map sum matrix:to-row-list (matrix:times-element-wise realmatrix simmatrix)) / (N * N)
+  let k0 phiphihat / phihatsquared
+  let squares matrix:map (matrix:minus realmatrix (matrix:map simmatrix [phi -> phi * k0])) [phi -> phi ^ 2]
+  report ln ((sum map sum matrix:to-row-list squares) / (N * N))
+end
 
 
 
@@ -225,7 +263,7 @@ end
 ;;
 ; average weighted in-degree
 to-report indicators:network-average-weighted-indegree
-  let degrees [sum [firmlink:volume] of in-firmlink-neighbors] of cities
+  let degrees [sum [link:volume] of in-firmlink-neighbors] of cities
   report mean degrees
 end
 
@@ -239,7 +277,7 @@ end
 ;;
 ; average weighted in-degree
 to-report indicators:network-average-weighted-outdegree
-  let degrees [sum [firmlink:volume] of out-firmlink-neighbors] of cities
+  let degrees [sum [link:volume] of out-firmlink-neighbors] of cities
   report mean degrees
 end
 
@@ -272,7 +310,7 @@ to-report indicators:correlation-flow-distance [non-zero?]
   ; this is conditional to having a non zero flow
     if count firmlinks < 10 [report (list 0 0 0)] ; in too much self-reinforcing cases, not enough links
     let orderedlinks sort-on [(word [city:number] of end1 [city:number] of end2)] firmlinks
-    report utils:statistics:pearson-correlation-ci (map [? -> [ln firmlink:volume] of ?] orderedlinks) (map [? -> [link-length] of ?] orderedlinks)
+    report utils:statistics:pearson-correlation-ci (map [? -> [ln link:volume] of ?] orderedlinks) (map [? -> [link-length] of ?] orderedlinks)
   ][
     ; else should work with the full matrix
     let dists utils:list:flatten matrix:to-row-list cities:geo-distance-matrix
@@ -291,14 +329,14 @@ end
 ; hierarchy of flows
 to-report indicators:flows-distribution-ranksize
   ; filter on > 0 anyway in the ranksize estimation
-  report utils:statistics:rank-size-hierarchy [firmlink:volume] of firmlinks
+  report utils:statistics:rank-size-hierarchy [link:volume] of firmlinks
 end
 
 
 ;;
 ; entropy of flows
 to-report indicators:flows-distribution-entropy
-  report utils:statistics:entropy [firmlink:volume] of firmlinks
+  report utils:statistics:entropy [link:volume] of firmlinks
 end
 
 ;;
