@@ -69,6 +69,9 @@ to setup:setup-globals
   set setup:region-width 4500
   set world:distance-rescaling setup:region-width / world-width
   
+  ; unit link scale: will be reset to appropriate value in case of real system
+  set runtime:link-size 1
+  
 end
 
 
@@ -82,7 +85,7 @@ to setup:setup-headless
   set setup:scaling-exponent 1.1
   set setup:sectors-number 50
   
-  set runtime:final-time 1000
+  ;set runtime:final-time 1000
   
   set setup:sector-composition-mode "log-normal"
   
@@ -168,7 +171,7 @@ end
 ;    TODO estimate this with fixed effects on real data
 to setup:setup-distance-matrices
   
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   
   let xi matrix:from-row-list (utils:list:rep (map [? -> [xcor] of ?] orderedcities) (length orderedcities))
   let xj matrix:from-column-list (utils:list:rep (map [? -> [xcor] of ?] orderedcities) (length orderedcities))
@@ -214,9 +217,9 @@ to setup:setup-initial-network
   if setup:setup-type = "real" [
      ; cities already have trajectories in that case-> one network for each date
     ask cities [
-      let number city:number let country city:country
+      let number cities:number let country city:country
        foreach runtime:dates [ year ->
-        hatch-real-cities 1 [set hidden? true set real-city:number number set real-city:year year set real-city:country country]
+        hatch-real-cities 1 [set hidden? true set cities:number number set real-city:year year set real-city:country country]
       ]
     ]
     
@@ -226,7 +229,7 @@ to setup:setup-initial-network
       let year item 2 row
       let oindex -1 if table:has-key? cities:real-id-map (item 0 row) [set oindex table:get cities:real-id-map (item 0 row)]
       let dindex -1 if table:has-key? cities:real-id-map (item 1 row) [set dindex table:get cities:real-id-map (item 1 row)]
-      let origin one-of real-cities with [real-city:number = oindex and real-city:year = year] let destination one-of real-cities with [real-city:number = dindex and real-city:year = year]
+      let origin one-of real-cities with [cities:number = oindex and real-city:year = year] let destination one-of real-cities with [cities:number = dindex and real-city:year = year]
       let weight item 3 row
       if origin != nobody and destination != nobody [
         ask origin [
@@ -254,6 +257,11 @@ to setup:setup-initial-network
         ]
      ]
     ]
+    
+    
+    ; set unit link size
+    let total-real-flow sum map sum matrix:to-row-list (links:adjacency-matrix real-firmlinks)
+    set runtime:link-size (total-real-flow / runtime:final-time)
     
   ]
   

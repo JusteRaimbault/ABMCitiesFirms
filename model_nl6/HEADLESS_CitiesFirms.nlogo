@@ -58,9 +58,13 @@ globals [
 
   ;;
   ; runtime parameters
+
   runtime:headless?
   runtime:final-time
   runtime:city-evolution-scale
+  ;;
+  ; unitary size of link added at each step
+  runtime:link-size
 
   ;;
   ; runtime variables
@@ -108,13 +112,18 @@ globals [
 ]
 
 
+turtles-own [
+  ; both for real city and city
+  cities:number
+]
+
 breed [cities city]
 
 cities-own [
 
   ;;
   ; internal use (rank-size law, matrix indices)
-  city:number
+  ;city:number
 
   city:name
 
@@ -149,7 +158,8 @@ cities-own [
 breed [real-cities real-city]
 
 real-cities-own[
-  real-city:number
+  ; common variable for both breeds
+  ;real-city:number
   real-city:year
   real-city:country
 ]

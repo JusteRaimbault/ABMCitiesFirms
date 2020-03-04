@@ -74,7 +74,7 @@ to cities:setup-real-sectors-or-size [with-size?]
     if item 1 row = t0 [
       let id item 0 row
       let sectors sublist row 6 (length row)
-      ask one-of cities with [city:number = id][
+      ask one-of cities with [cities:number = id][
         set city:sector-composition sectors
         if with-size? [
           set city:gdp item 5 row
@@ -95,7 +95,7 @@ to cities:setup-real-cities
   set runtime:current-date-index 0 ; not fully appropriate to do it here
   let t0 min dates
   let cities-numbers remove-duplicates map [? -> read-from-string (item 0 ?)] setup:cities-data
-  foreach cities-numbers [n -> create-cities 1 [set city:number n set shape "circle" set city:historical-gdp utils:list:rep 0 (length dates) set city:historical-sectors utils:list:rep [] (length dates)]]
+  foreach cities-numbers [n -> create-cities 1 [set cities:number n set shape "circle" set city:historical-gdp utils:list:rep 0 (length dates) set city:historical-sectors utils:list:rep [] (length dates)]]
 
   foreach setup:cities-data [row ->
     ;show row
@@ -109,7 +109,7 @@ to cities:setup-real-cities
     let gdp read-from-string (item 6 row)
     let sectors map [? -> abs (read-from-string ?)] (sublist row 7 (length row)) ; note: the abs is not necessary - negative turnover should have been filtered before
     if t = t0 [
-      ask one-of cities with [city:number = id][
+      ask one-of cities with [cities:number = id][
         set city:name name
         set city:sector-composition sectors
         set city:gdp gdp
@@ -121,8 +121,8 @@ to cities:setup-real-cities
       ]
     ]
     ; whatever the time upate hist trajs
-    if one-of cities with [city:number = id] != nobody [
-      ask one-of cities with [city:number = id][
+    if one-of cities with [cities:number = id] != nobody [
+      ask one-of cities with [cities:number = id][
         set city:historical-gdp replace-item (position t runtime:dates) city:historical-gdp gdp
         set city:historical-sectors replace-item (position t runtime:dates) city:historical-sectors sectors
       ]
@@ -137,7 +137,7 @@ to cities:setup-real-cities
   ;  - store origin id in a map, used at network construction
   let k 0
   set cities:real-id-map table:make
-  ask cities [let id city:number set city:number k table:put cities:real-id-map id k set k k + 1]
+  ask cities [let id cities:number set cities:number k table:put cities:real-id-map id k set k k + 1]
 end
 
 
@@ -146,7 +146,7 @@ end
 ; can use matrices and then flatten
 to cities:compute-link-utility-matrix
   
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
@@ -177,7 +177,7 @@ end
 ; compute and set the global sector proximity matrix between cities
 ;  as s_{ij} = \sum_k sik sjk , can use matrix elementwise product and iterate for the sum
 to cities:compute-sector-proximity-matrix
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   
   set cities:sectors-proximity-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0
   
@@ -245,7 +245,7 @@ to cities:new-city [number]
   set shape "circle"
   ; size and color fixed in display
   
-  set city:number number
+  set cities:number number
   
   set city:gdp (setup:max-gdp / ((number + 1) ^ setup:scaling-exponent))
   

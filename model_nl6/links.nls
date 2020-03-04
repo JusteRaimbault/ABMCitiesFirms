@@ -7,10 +7,10 @@
 to links:add-link
   let toadd links:link-to-add
   let i first toadd let j last toadd
-  ask one-of cities with [city:number = i][
-    let d one-of cities with [city:number = j]
+  ask one-of cities with [cities:number = i][
+    let d one-of cities with [cities:number = j]
     ifelse out-firmlink-neighbor? d [
-      ask out-firmlink-to d [set link:volume link:volume + 1]
+      ask out-firmlink-to d [set link:volume link:volume + runtime:link-size]
     ][
       create-firmlink-to d [links:new-link]
     ]
@@ -46,7 +46,7 @@ end
 ;;
 ; only the adjacency matrix is updated
 to links:update-new-link [newlink]
-  matrix:set links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) (matrix:get links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) + 1)
+  matrix:set links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) (matrix:get links:network-adjacency-matrix (item 0 newlink) (item 1 newlink) + runtime:link-size)
 end
 
 
@@ -60,13 +60,13 @@ end
 ;;
 ; compute the adjacency matrix corresponding to a given link set
 to-report links:adjacency-matrix [linkset]
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   let res matrix:make-constant (length orderedcities) (length orderedcities) 0 
   
   ask linkset [
     let wij link:volume
     let o end1 let d end2
-    ask o [let i city:number ask d [let j city:number matrix:set res i j ((matrix:get res i j) + wij)]]
+    ask o [let i cities:number ask d [let j cities:number matrix:set res i j ((matrix:get res i j) + wij)]]
   ]
   report res
 end
@@ -75,5 +75,5 @@ end
 
 to links:new-link
   set thickness 0.1 set color black;set color green
-  set link:volume 1
+  set link:volume runtime:link-size
 end

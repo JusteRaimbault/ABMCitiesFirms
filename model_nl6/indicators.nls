@@ -103,13 +103,17 @@ to-report indicators:mse-log
   let realmatrix links:adjacency-matrix real-firmlinks
   let simmatrix links:adjacency-matrix firmlinks
   let N item 0 matrix:dimensions realmatrix
-  let logphi matrix:map realmatrix [phi -> indicators:log-zero phi]
-  let logphihat matrix:map simmatrix [phi -> indicators:log-zero phi]
+  let logphi matrix:map [phi -> indicators:log-zero phi] realmatrix
+  let logphihat matrix:map [phi -> indicators:log-zero phi] simmatrix
   ; compute rescaling constant
   let k0 ((sum map sum matrix:to-row-list logphi) / (N * N)) - ((sum map sum matrix:to-row-list logphihat) / (N * N))
   let diffmat matrix:minus logphi logphihat
-  let squares matrix:map diffmat [d -> (d - k0)^ 2]
-  report (sum map sum matrix:to-row-list squares) / (N * N)
+  let squares matrix:map [d -> (d - k0)^ 2] diffmat
+  ;show (word "k0 = " k0)
+  ;show ( word "mse log without renorm = " ((sum map sum matrix:to-row-list matrix:map [d -> d ^ 2] diffmat) / (N * N)))
+  let res (sum map sum matrix:to-row-list squares) / (N * N)
+  ;show (word "mse log = " res)
+  report res
 end
 
 ;;
@@ -120,11 +124,15 @@ to-report indicators:log-mse
   let simmatrix links:adjacency-matrix firmlinks
   ; note: could have globals to avoid recomputing - fine, O(|Links|)
   let N item 0 matrix:dimensions realmatrix
-  let phihatsquared (sum map sum matrix:to-row-list (matrix:map simmatrix [phi -> phi ^ 2])) / (N * N)
+  let phihatsquared (sum map sum matrix:to-row-list (matrix:map [phi -> phi ^ 2] simmatrix)) / (N * N)
   let phiphihat (sum map sum matrix:to-row-list (matrix:times-element-wise realmatrix simmatrix)) / (N * N)
   let k0 phiphihat / phihatsquared
-  let squares matrix:map (matrix:minus realmatrix (matrix:map simmatrix [phi -> phi * k0])) [phi -> phi ^ 2]
-  report ln ((sum map sum matrix:to-row-list squares) / (N * N))
+  let squares matrix:map [phi -> phi ^ 2] (matrix:minus realmatrix (matrix:map [phi -> phi * k0] simmatrix))
+  let res ln ((sum map sum matrix:to-row-list squares) / (N * N))
+  ;show (word "k0 = " k0)
+  ;show (word "log mse without renorm = " (ln ((sum map sum matrix:to-row-list (matrix:map [phi -> phi ^ 2] (matrix:minus realmatrix simmatrix))) / (N * N))))
+  ;show (word "log mse = " res)
+  report res
 end
 
 
@@ -163,7 +171,7 @@ end
 ;;
 ; metropolization as deviation from expected flows as function of size only
 to-report indicators:metropolization
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let etot sum (map [? -> [city:gdp] of ? ] orderedcities)
@@ -182,7 +190,7 @@ end
 ;  ! depending 
 to-report indicators:regionalization [quantiles]
   let symmetrized-log-adjacency matrix:map genlog (matrix:plus links:network-adjacency-matrix (matrix:transpose links:network-adjacency-matrix))
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let cumsizes (matrix:plus ei ej)
@@ -198,7 +206,7 @@ end
 ;;
 ; correlation between specialization and flow by size quantiles
 to-report indicators:specialization [quantiles]
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities)) ; TODO used quite a lot of times, should set as global
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let cumsizes (matrix:plus ei ej)
@@ -296,7 +304,7 @@ end
 ; correlation degree / size
 ;  done on logs
 to-report indicators:correlation-degree-size
-  let orderedcities sort-on [city:number] cities
+  let orderedcities sort-on [cities:number] cities
   let degrees map [? -> genlog count [firmlink-neighbors] of ?] orderedcities
   let sizes map [? -> [ln city:gdp] of ?] orderedcities
   report utils:statistics:pearson-correlation-ci degrees sizes
@@ -309,7 +317,7 @@ to-report indicators:correlation-flow-distance [non-zero?]
   ifelse non-zero? = true [
   ; this is conditional to having a non zero flow
     if count firmlinks < 10 [report (list 0 0 0)] ; in too much self-reinforcing cases, not enough links
-    let orderedlinks sort-on [(word [city:number] of end1 [city:number] of end2)] firmlinks
+    let orderedlinks sort-on [(word [cities:number] of end1 [cities:number] of end2)] firmlinks
     report utils:statistics:pearson-correlation-ci (map [? -> [ln link:volume] of ?] orderedlinks) (map [? -> [link-length] of ?] orderedlinks)
   ][
     ; else should work with the full matrix

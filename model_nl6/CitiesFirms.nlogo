@@ -49,6 +49,8 @@ globals [
   ;;
   ; runtime variables
 
+  runtime:link-size
+
   runtime:headless?
 
 
@@ -100,13 +102,17 @@ globals [
 ]
 
 
+turtles-own [
+   cities:number
+]
+
 breed [cities city]
 
 cities-own [
 
   ;;
   ; internal use (rank-size law, matrix indices)
-  city:number
+  ;city:number
 
   ;;
   ; city name
@@ -146,7 +152,7 @@ cities-own [
 breed [real-cities real-city]
 
 real-cities-own[
-  real-city:number
+  ;real-city:number
   real-city:year
   real-city:country
 ]
@@ -170,7 +176,6 @@ real-firmlinks-own [
  ;real-firmlink:volume
  real-firmlink:year
 ]
-
 
 
 
