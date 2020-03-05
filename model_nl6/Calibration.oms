@@ -1,0 +1,63 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val finalTime = Val[Int]
+
+val gammaOrigin = Val[Double]
+val gammaDestination = Val[Double]
+val gammaLinks = Val[Double]
+val gammaSectors = Val[Double]
+val gravityDecay = Val[Double]
+val countryGravityDecay = Val[Double]
+
+// indicators
+val logmse = Val[Double]
+val mselog = Val[Double]
+
+val replication = Val[Int]
+
+val cmds = Seq("experiments:setup-experiment \"real\" ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}"
+,"experiments:run-experiment")
+
+val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+    inputs += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+      gravityDecay,countryGravityDecay,replication),
+    outputs += mselog mapped "indicators:mse-log",
+    outputs += logmse mapped "indicators:log-mse"
+    finalTime := 5000
+)
+
+//val purpose = "CALIBRATION_GRID"
+val purpose = "CALIBRATION_TEST"
+val datestr = (new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()).toString
+val resdir = purpose+"_"+datestr
+
+//val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+val env = LocalEnvironment(5)
+
+
+val evolution =
+  NSGA2Evolution(
+    genome =
+      Seq(
+        gravityDecay in (1.0,10000.0),
+        countryGravityDecay in (0.01,100.0),
+        gammaSectors in (0.0,10.0),
+        gammaLinks in (0.0,10.0),
+        gammaOrigin in (0.0,10.0),
+        gammaDestination in (0.0,10.0)
+      ),
+      mu = 5,
+      objectives = Seq(mselog,logmse),
+      evaluation = model,
+      stochastic = Stochastic(seed = replication),
+      termination = 1,
+      parallelism = 5//,
+      //distribution = Island(5 minutes)
+)
+
+val savePopulation = SavePopulationHook(evolution, workDirectory / "calibration" / resdir)//,100)
+
+
+(evolution on env hook savePopulation)
