@@ -202,6 +202,11 @@ to setup:setup-distance-matrices
   let citycountries map [? -> [city:country] of ?] orderedcities let ci matrix:from-row-list (utils:list:rep citycountries (length orderedcities)) let cj matrix:from-column-list (utils:list:rep citycountries (length orderedcities))
   set cities:soc-distance-matrix (matrix:map [[c1 c2] -> table:get countrydist (list c1 c2)] ci cj)
   
+  ; trick to desactivate country fixed effect mechanism: params:country-gravity-decay set to 0 <=> infty => soc-distance-matrix set to 0
+  if params:country-gravity-decay = 0 [
+     set params:country-gravity-decay 1
+     set cities:soc-distance-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0
+  ]
   
 end
 

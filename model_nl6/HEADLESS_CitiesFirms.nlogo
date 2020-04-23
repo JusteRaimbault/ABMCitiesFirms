@@ -186,7 +186,7 @@ real-firmlinks-own [
 GRAPHICS-WINDOW
 340
 13
-1182
+951
 625
 -1
 -1
@@ -201,7 +201,7 @@ GRAPHICS-WINDOW
 0
 1
 0
-277
+200
 0
 200
 0

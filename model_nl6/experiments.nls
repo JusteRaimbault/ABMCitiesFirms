@@ -59,7 +59,8 @@ to experiments:test-experiment
   ;experiments:setup-experiment 1.1 50 "log-normal" 500 1.0 1.0 1.0 1.0 200.0 200.0 (random 10000)
   ; experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
   ;"${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} (random 100000)
-  experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 2100.0 1388528261
+  ;experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 2100.0 1388528261
+  experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 0.0 1388528261
   experiments:run-experiment
   indicators:compute-indicators
 end
