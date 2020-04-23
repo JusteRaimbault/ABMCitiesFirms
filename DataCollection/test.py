@@ -1,3 +1,7 @@
+
+# data access is not possible by an API but through an interactive dashboard (requiring js rendering) which limits the total amount of data exported in one time; the query was created and saved within the dashboard, and data was downloaded by chunks using browser automation using Selenium and its python API (see [code](https://github.com/JusteRaimbault/ABMCitiesFirms/tree/master/DataCollection)).
+
+
 from selenium import webdriver
 
 import time
