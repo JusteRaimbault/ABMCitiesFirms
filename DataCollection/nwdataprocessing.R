@@ -385,6 +385,9 @@ finalfirms$selfown = finalfirms$id%in%ownowners
 
 finallinks = finallinks[finallinks$from!=finallinks$to,]
 
+# should avoid issue after having exported csv - anyway should have used quotes
+finalfirms$name = gsub(';','',finalfirms$name,fixed=T)
+
 # write the data
 write.table(finalfirms,file='Data/firms/amadeus_nodes.csv',sep=";",row.names = F,quote=F)
 write.table(finallinks,file='Data/firms/amadeus_links.csv',sep=";",row.names = F,quote=F)
