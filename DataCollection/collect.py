@@ -11,6 +11,14 @@ import navigation
 
 driver = navigation.initialize()
 
+# go to saved search
+wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_TabSavedSearches")
+print("Saved searches")
+
+# retrieve first saved search
+wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
+print("First saved search")
+
 remaining=True
 
 while remaining:

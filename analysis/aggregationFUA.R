@@ -26,7 +26,15 @@ countries <- st_read('Data/','countries')
 
 firms <- read.csv('Data/firms/amadeus_nodes.csv',sep=";",quote = "")
 firmlinks <- read.csv('Data/firms/amadeus_links.csv',sep=";",quote = "")
+
+dim(firms)
+# 3,053,540
+dim(firmlinks)
+# 1,866,936
+
 firmswithcoords = firms[!is.na(firms$lon)&!is.na(firms$lat),]
+dim(firmswithcoords)
+# 2,715,188
 
 rawfirmpoints = SpatialPointsDataFrame(coords = firmswithcoords[,c("lon","lat")],data = firmswithcoords,proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
 firmpoints <- st_transform(st_as_sf(rawfirmpoints),st_crs(fuas))
@@ -46,12 +54,12 @@ firms_withfuas <- firmfuas %>% filter(!is.na(eFUA_ID))
 
 
 # overlay with Europe countries
-#rawfirmpointswgs84 = st_as_sf(rawfirmpoints)
-#countrieswgs84 = st_transform(countries,st_crs(rawfirmpointswgs84))
-#firmcountries = st_join(rawfirmpointswgs84,countrieswgs84,join=st_within)
+
+countriesEurope = st_transform(countries,st_crs(fuas))
+firmcountries = st_join(firmpoints,countriesEurope,join=st_within)
 # proportion of firms within Europe
-#100*length(which(is.na(firmcountries$CNTR_ID)))/nrow(firmcountries)
-#length(which(!is.na(firmcountries$CNTR_ID)))
+100*length(which(is.na(firmcountries$CNTR_ID)))/nrow(firmcountries)
+length(which(!is.na(firmcountries$CNTR_ID)))
 # remove Switzerland and Norway and other non EU countries
 #100*length(which(is.na(firmcountries$CNTR_ID)|as.character(firmcountries$CNTR_ID)%in%c("NO")))/nrow(firmcountries)
 #eucountries = c(
@@ -77,6 +85,9 @@ eucountries_iso = c(
     "CYP","EST","SVN", # Chypre Estonie Slovénie
     "HRV","MLT","SWE") #Croatie Malte Suède
 # + North Cyprus - not taken into account
+
+# firms within EU
+nrow(firmfuas %>% filter(Cntry_ISO%in%eucountries_iso))
 
 firms_withfuas_eu <- firms_withfuas %>% filter(Cntry_ISO%in%eucountries_iso)
 # 2,033,799

@@ -35,47 +35,37 @@ def initialize():
     # login
     loginurl = utils.get_param('loginurl')
     driver.get(loginurl)
-    fill_field(driver,"username",utils.get_param('username'))
-    fill_field(driver,"password",utils.get_param('password'))
-    click_validate(driver,"_eventId_proceed")
+    fill_field(driver,"input","id","username",utils.get_param('username'))
+    fill_field(driver,"input","id","password",utils.get_param('password'))
+    click_validate(driver,"button","name","_eventId_proceed")
     print("login successful")
 
-    # go to saved search
-    wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_TabSavedSearches")
-    print("Saved searches")
-
-    # retrieve first saved search
-    wait_and_click(driver,"ContentContainer1_ctl00_Content_QuickSearch1_ctl02_MySavedSearches1_DataGridResultViewer_ctl04_Linkbutton1")
-    print("First saved search")
-    # reload columns -> edit columns, saved lists ? OK default columns saved
     return(driver)
 
 
+def get_element(driver,element,attribute,attribute_value):
+    return(driver.find_element_by_xpath("//"+element+"[@"+attribute+"='"+attribute_value+"']"))
 
-def fill_field(driver,id,value,by_id = True):
-    if by_id:
-        elem = driver.find_element_by_id(id)
-        elem.clear()
-        elem.send_keys(value)
-    else: # else by name
-        elem = driver.find_element_by_name(id)
-        elem.clear()
-        elem.send_keys(value)
-
-def click_validate(driver,id):
-    driver.find_element_by_name(id).send_keys(Keys.ENTER)
+def fill_field(driver,element,attribute,attribute_value,value):
+    elem = get_element(driver,element,attribute,attribute_value)
+    elem.clear()
+    elem.send_keys(value)
 
 
-def wait_for_id(driver,id,timeout=1000,by_id = True):
-    if by_id:
-        WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.ID, id)))
-    else:
-        WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.NAME, id)))
+def click_validate(driver,element,attribute,attribute_value):
+    get_element(driver,element,attribute,attribute_value).send_keys(Keys.ENTER)
 
+#'
+#' by: By.ID, By.NAME
+def wait_for_element(driver,element,attribute,attribute_value,timeout=1000):
+    WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.XPATH, "//"+element+"[@"+attribute+"='"+attribute_value+"']")))
 
-def wait_and_click(driver, id,timeout=1000):
-    wait_for_id(driver,id,timeout)
-    action_chains.ActionChains(driver).click(driver.find_element_by_id(id)).perform()
+def click(driver,element):
+    action_chains.ActionChains(driver).click(element).perform()
 
-def select(driver,id,value):
-    Select(driver.find_element_by_id(id)).select_by_value(value)
+def wait_and_click(driver, element,attribute,attribute_value,timeout=1000):
+    wait_for_element(driver,element,attribute,attribute_value,timeout)
+    click(driver,get_element(driver,element,attribute,attribute_value))
+
+def select(driver,element,attribute,attribute_value,value):
+    Select(get_element(driver,element,attribute,attribute_value)).select_by_value(value)
