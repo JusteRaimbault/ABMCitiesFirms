@@ -54,12 +54,11 @@ firms_withfuas <- firmfuas %>% filter(!is.na(eFUA_ID))
 
 
 # overlay with Europe countries
-
-countriesEurope = st_transform(countries,st_crs(fuas))
-firmcountries = st_join(firmpoints,countriesEurope,join=st_within)
+#countriesEurope = st_transform(countries,st_crs(fuas))
+#firmcountries = st_join(firmpoints,countriesEurope,join=st_within)
 # proportion of firms within Europe
-100*length(which(is.na(firmcountries$CNTR_ID)))/nrow(firmcountries)
-length(which(!is.na(firmcountries$CNTR_ID)))
+#100*length(which(is.na(firmcountries$CNTR_ID)))/nrow(firmcountries)
+#length(which(!is.na(firmcountries$CNTR_ID)))
 # remove Switzerland and Norway and other non EU countries
 #100*length(which(is.na(firmcountries$CNTR_ID)|as.character(firmcountries$CNTR_ID)%in%c("NO")))/nrow(firmcountries)
 #eucountries = c(
@@ -88,8 +87,10 @@ eucountries_iso = c(
 
 # firms within EU
 nrow(firmfuas %>% filter(Cntry_ISO%in%eucountries_iso))
+# 2,033,799
 
 firms_withfuas_eu <- firms_withfuas %>% filter(Cntry_ISO%in%eucountries_iso)
+nrow(firms_withfuas_eu)
 # 2,033,799
 
 
@@ -103,12 +104,16 @@ length(which(firms_withfuas$id%in%linkids&!is.na(firms_withfuas$turnover)))
 # join fuaids to firmlinks -> ! ~ 1000 companies are repeated - should already filter by year?
 # FIXME should be a semi_join ? - or filter firms table before - which info to keep? the closest in time to the link ?
 #  -> nested join and summarize
-linkfuas = left_join(firmlinks,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo')],by=c('from'='id'))
-names(linkfuas)[6:8]<-c("from_fua","from_turnover","from_year")
-length(which(!is.na(linkfuas$from_fua)))/nrow(linkfuas) # 32.99 % = 616031 between fuas
+linkfuas = left_join(firmlinks,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo','Cntry_ISO')],by=c('from'='id'))
+names(linkfuas)[6:9]<-c("from_fua","from_turnover","from_year","from_country")
+length(which(!is.na(linkfuas$from_fua))) # 652258
+length(which(!is.na(linkfuas$from_fua)))/nrow(linkfuas) # 32.99 % = 652258 between fuas
 # join for to_fuas
-linkfuas = left_join(linkfuas,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo')],by=c('to'='id'))
-names(linkfuas)[10:12] <- c('to_fua',"to_turnover","to_year")
+linkfuas = left_join(linkfuas,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo','Cntry_ISO')],by=c('to'='id'))
+names(linkfuas)[11:14] <- c('to_fua',"to_turnover","to_year","to_country")
+length(which(!is.na(linkfuas$to_fua)))
+
+length(which(!is.na(linkfuas$to_fua)&!is.na(linkfuas$from_fua)))
 
 # year of link observation
 linkfuas$year = substring(linkfuas$date,4,7)
@@ -126,8 +131,9 @@ save(firmpoints,firmfuas,firms_withfuas,firms_withfuas_eu,linkfuas,file='Data/fi
 #load(file='Data/firms/amadeus_aggregGHSFUA.RData')
 
 # where do links go ?
-#linkcountries = left_join(firmlinks,firmcountries[!duplicated(firmcountries$id),c('id','CNTR_ID')],by=c('from'='id'));names(linkcountries)[6]="from_country"
-#linkcountries = left_join(linkcountries,firmcountries[!duplicated(firmcountries$id),c('id','CNTR_ID')],by=c('to'='id'));names(linkcountries)[8]="to_country"
+length(which(linkfuas$from_country%in%eucountries_iso))
+length(which(linkfuas$to_country%in%eucountries_iso))
+length(which(linkfuas$from_country%in%eucountries_iso&linkfuas$to_country%in%eucountries_iso))
 # - country ownership matrix (cumulated in time)
 # - visualize inter-country flows: all world and EU
 
@@ -145,6 +151,7 @@ length(which(!is.na(linkfuas$to_fua)))
 
 links = linkfuas[!is.na(linkfuas$from_fua)&!is.na(linkfuas$to_fua),]
 # with turnover at destination and proportion of ownership # remains 161303
+length(which(!is.na(links$to_turnover)&!is.na(links$proportion)))
 links = links[!is.na(links$to_turnover)&!is.na(links$proportion),]
 
 
@@ -157,9 +164,40 @@ links = links[!is.na(links$to_turnover)&!is.na(links$proportion),]
 #aggrlinksyear$dummy=rep("link",nrow(aggrlinksyear))
 
 
+####
+# UK Statistics
+length(which(firms$country=='GB')) # 463731
+length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$eFUA_ID))) # 413740
+length(which(firmfuas$Cntry_ISO=='GBR'&firmfuas$id%in%linkids)) # 336804
+length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$turnover))) #78273
+length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$turnover)&firmfuas$id%in%linkids)) # 68273
+
+length(which(linkfuas$from_country=='GBR')) # 128066
+length(which(linkfuas$to_country=='GBR')) # 293820
+length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR')) # 116661
+length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR'&!is.na(linkfuas$from_fua)&!is.na(linkfuas$to_fua))) # 116661
+length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR'&!is.na(linkfuas$to_turnover)&!is.na(linkfuas$proportion))) # 12480
+# same, as country is obtained through fua -> need an other join
+linkall = left_join(firmlinks,firms[,c('id','country')],by=c('from'='id'))
+linkall = left_join(linkall,firms[,c('id','country')],by=c('to'='id'))
+length(which(linkall$country.x=='GB')) # 142975
+length(which(linkall$country.y=='GB')) # 323618
+length(which(linkall$country.x=='GB'&linkall$country.y=='GB')) #131819
+
+
+
 # Aggregate links
 aggrlinks <- links %>% filter(to_turnover>0) %>% group_by(from_fua,to_fua) %>% summarize(weight = sum(proportion*to_turnover))
 
+
+####
+# uk
+fuas$eFUA_ID=as.character(fuas$eFUA_ID)
+aggrlinkscountries = left_join(aggrlinks,fuas[,c('eFUA_ID','Cntry_ISO')],by=c('from_fua'='eFUA_ID'))
+aggrlinkscountries = left_join(aggrlinkscountries,fuas[,c('eFUA_ID','Cntry_ISO')],by=c('to_fua'='eFUA_ID'))
+length(which(aggrlinkscountries$Cntry_ISO.x=="GBR")) # 1524
+length(which(aggrlinkscountries$Cntry_ISO.y=="GBR")) # 1541
+length(which(aggrlinkscountries$Cntry_ISO.y=="GBR"&aggrlinkscountries$Cntry_ISO.x=="GBR"))
 
 # year repartition is shitty
 #table(links$year)

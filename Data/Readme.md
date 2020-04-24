@@ -68,32 +68,32 @@ Firms:
 
  - 3,053,540 firms
  - 2,715,188 with coordinates
- - 2,653,434 within Europe, 2,653,034 within EU (due to the way Amadeus is constructed)
- - 1,920,909 within FUAs
- - 1,495,651 within FUAs with a link
- - 753,224 within FUAs, linked and with turnover
+ - 2,036,272 within FUAs
+ - 2,033,799 within EU and FUAs
+ - 1,589,593 within FUAs with a link
+ - 763,151 within FUAs, linked and with turnover
 
 Links:
 
  - 1,866,936 links
- - 794,782 with an origin European country, 1,691,007 with a destination European country, 761,173 with both % most links are intercontinental ! we get with the amadeus either links from EU, or to EU -> international study interesting ?
- - 616,031 with an origin FUA, 1,254,374 with a destination FUAs
- - 555,196 between FUAs % FIXME proper join
- - 161,303 between FUAs, with ownership \% information and destination turnover when aggregating at FUA (without years), 4,978 links (on 451,584 possible, very sparse)
+ - 652,258 with an origin FUA within EU, 1,326,340 with a destination FUAs within EU, 593,823 between FUAs within EU
+ - 157,645 between FUAs, with ownership and destination turnover
+ - 12,463 aggregated links between FUAs
 
 For the UK:
 
- - 266,243 links
- - Links from UK 67,843
- - Links to UK 160,683
- - From UK to UK (internal) 37,719
+ - 463,731 firms; 413,740 firms within FUAs; 336,804 firms within FUAs and with a link; 78,273 firms within FUAs and with turnover; 68,273 within FUAs, with turnover and a link
+ - 142,975 links from UK; 323,618 links to UK; 131,819 links within UK
+ - 128,066 links within FUAs from UK; 293,820 links within FUAs to UK; 116,661 within FUAs internal to UK
+ - 12,480 between FUAs, with ownership and destination turnover
+ - 1,524 aggregated links from UK; 1,541 to UK; 665 within UK
 
 
 ## Database construction
 
 All code for data collection, processing and an example of application (empirical study of the network and calibration of a generative network model) is available on an open [git repository](https://github.com/JusteRaimbault/ABMCitiesFirms).
 
- - Download of the database: data was downloaded by chunks from the interface of Amadeus, with the filter "Region/Country/region in Country in European Union" (15,183,677 results) with columns: Company name, ID, Country, City, Zip code, NACE code, NAICS code, National industry code (primary), Last year (year for turnover and employerr information), Turnover, Number of Employees, Name of GUO, ID of GUO, Country of GUO, City of GUO, NACE of GUO, NAICS of GUO, Percentage of dorect ownership, Percentage of total ownership, Date of information on ownership, Turnover of GUO, Employees of GUO.
+ - Download of the database: data was downloaded by chunks from the interface of Amadeus, with the filter "Region/Country/region in Country in European Union" (15,183,677 results) with columns: Company name, ID, Country, City, Zip code, NACE code, NAICS code, National industry code (primary), Last year (year for turnover and employer information), Turnover, Number of Employees, Name of GUO, ID of GUO, Country of GUO, City of GUO, NACE of GUO, NAICS of GUO, Percentage of direct ownership, Percentage of total ownership, Date of information on ownership, Turnover of GUO, Employees of GUO.
 
  - Consolidation of raw files: separate raw files were cleaned, filtered for actual companies with a location and a Global Ultimate Owner, and consolidated into a single file ([script](https://github.com/JusteRaimbault/ABMCitiesFirms/blob/master/DataCollection/process.R)).
 
