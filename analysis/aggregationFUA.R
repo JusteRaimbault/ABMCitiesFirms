@@ -184,6 +184,40 @@ length(which(linkall$country.x=='GB')) # 142975
 length(which(linkall$country.y=='GB')) # 323618
 length(which(linkall$country.x=='GB'&linkall$country.y=='GB')) #131819
 
+# exports for UK
+names(linkall)[6:7]=c('from_country','to_country')
+# from uk
+write.table(linkall[which(linkall$from_country=='GB'),],file='Data/firms/extracts/fromUK_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(linkall$from[which(linkall$from_country=='GB')],linkall$to[which(linkall$from_country=='GB')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/fromUK_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
+# to uk
+write.table(linkall[which(linkall$to_country=='GB'),],file='Data/firms/extracts/toUK_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(linkall$from[which(linkall$to_country=='GB')],linkall$to[which(linkall$to_country=='GB')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/toUK_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
+# within uk
+write.table(linkall[which(linkall$from_country=='GB'&linkall$to_country=='GB'),],file='Data/firms/extracts/withinUK_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(linkall$from[which(linkall$from_country=='GB'&linkall$to_country=='GB')],linkall$to[which(linkall$from_country=='GB'&linkall$to_country=='GB')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/withinUK_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
+# from UK fuas
+uklinks = linkfuas[which(linkfuas$from_country=='GBR'|linkfuas$to_country=='GBR'),]
+uklinks[["geometry.x"]]=NULL;uklinks[["geometry.y"]]=NULL;uklinks[["proportion"]]=NULL;
+uklinks[["from_turnover"]]=NULL;uklinks[["to_turnover"]]=NULL;uklinks[["from_year"]]=NULL;uklinks[["to_year"]]=NULL;
+
+write.table(uklinks[which(uklinks$from_country=='GBR'),],file='Data/firms/extracts/fromUK_FUA_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(uklinks$from[which(uklinks$from_country=='GBR')],uklinks$to[which(uklinks$from_country=='GBR')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/fromUK_FUA_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
+write.table(uklinks[which(uklinks$to_country=='GBR'),],file='Data/firms/extracts/toUK_FUA_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(uklinks$from[which(uklinks$to_country=='GBR')],uklinks$to[which(uklinks$to_country=='GBR')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/toUK_FUA_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
+write.table(uklinks[which(uklinks$to_country=='GBR'&uklinks$from_country=='GBR'),],file='Data/firms/extracts/withinUK_FUA_links.csv',sep = ";",quote = F,col.names = T,row.names = F)
+linkids=unique(c(uklinks$from[which(uklinks$to_country=='GBR'&uklinks$to_country=='GBR')],uklinks$to[which(uklinks$to_country=='GBR'&uklinks$to_country=='GBR')]))
+write.table(firms[firms$id%in%linkids,],file='Data/firms/extracts/withinUK_FUA_nodes.csv',sep = ";",quote = F,col.names = T,row.names = F)
+
 
 
 # Aggregate links
@@ -307,13 +341,13 @@ bb=st_bbox(fuas[fuas$eFUA_ID%in%aggrnodes$eFUA_ID,])
 #   x ; y ; country ; GDP ( == aggregated turnover) ;
 #   sectors (any number, as proportions)
 
-
+aggrnodes$fuacountry=as.character(aggrnodes$fuacountry)
 exportnodes = as.data.frame(aggrnodes)
 exportnodes$time = rep(0,nrow(exportnodes))
-exportnodes = exportnodes[,c("eFUA_ID","fuaname","time","X","Y","fuacountry","turnover",sectornames)]
+exportnodes = exportnodes[,c("fua","fuaname","time","X","Y","fuacountry","turnover",sectornames)]
 names(exportnodes) <- c("id","name","time","x","y","country","turnover",sectornames)
 # country number needed! - order by alphabetical name (do same for estimated dmat)
-exportnodes$country = as.numeric(as.factor(as.character(exportnodes$country)))
+#exportnodes$country = as.numeric(as.factor(as.character(exportnodes$country)))
 
 
 exportlinks = as.data.frame(aggrlinks)
@@ -329,6 +363,9 @@ write.table(exportnodes,file='model_nl6/setup/fuacities.csv',row.names = F,sep="
 # save aggreg
 save(aggrnodes, aggrlinks, exportnodes, exportlinks, file='Data/firms/amadeus_aggregnw.RData')
 #load('Data/firms/amadeus_aggregnw.RData')
+
+# UK export
+
 
 
 ######

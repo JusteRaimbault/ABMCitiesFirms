@@ -32,7 +32,8 @@ driver.get('https://fame4.bvdinfo.com/version-2020423/fame/1/Companies/List')
 
 time.sleep(2)
 
-for RANGE_FROM in [100,200,666]:
+# 12820 with Export view
+for RANGE_FROM in [1,12001]:#[100,200,666]:
 
     # go to export
     navigation.wait_for_element(driver,"li","class","menuActions")
@@ -48,7 +49,8 @@ for RANGE_FROM in [100,200,666]:
     # export parameters
     #RANGE_FROM="10000"
     #RANGE_TO="10010"
-    RANGE_TO = RANGE_FROM+9
+    #RANGE_TO = RANGE_FROM+9
+    RANGE_TO = RANGE_FROM+11999
     print(str(RANGE_FROM)+"-"+str(RANGE_TO))
 
     # format
