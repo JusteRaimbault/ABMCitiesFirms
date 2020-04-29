@@ -41,13 +41,14 @@ while remaining:
             time.sleep(2+numpy.random.randint(8))
             print("Switch to export")
 
+            navigation.wait_for_element(driver,"select","id","component_FormatTypeSelectedId")
             # format
             navigation.select(driver,"select","id","component_FormatTypeSelectedId","Custom.list.txt")
             navigation.select(driver,"select","id","component_RangeOptionSelectedId","Range")
             navigation.wait_for_element(driver,"input","name","component.From")
             navigation.fill_field(driver,"input","name","component.From",RANGE_FROM)
             navigation.fill_field(driver,"input","name","component.To",RANGE_TO)
-            navigation.fill_field(driver,"input","id","component_FileName",RANGE_STR+"_"+str(int(time.time()))+".tsv")
+            navigation.fill_field(driver,"input","id","component_FileName",RANGE_STR+"_"+str(int(time.time())))
 
             navigation.wait_and_click(driver,"a","class","button submit ok")
             print("Waiting for file download")

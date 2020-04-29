@@ -4,4 +4,6 @@ geckodriver.log
 params.csv
 test
 data
+data2
+processed
 

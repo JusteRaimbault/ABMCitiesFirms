@@ -9,8 +9,9 @@ purpose = "All_firms"
 
 filter<-function(f){
   currentdata = read.table(file=paste0('data/',f),sep='\t',quote = "\"",stringsAsFactors = F,fileEncoding = 'UTF-16',header=T)
+  lines = rep(T,nrow(currentdata))
   if(purpose=="Ownership_links"){
-    lines = nchar(currentdata$Zip.code)>2 # at least origin zip code
+    lines = lines&nchar(currentdata$Zip.code)>2 # at least origin zip code
     #lines = lines&nchar(currentdata$GUO...Name)>0
     lines = lines&nchar(currentdata$GUO...BvD.ID.number)>0 # idem than name: with a GUO
     lines = lines&!grepl('*',currentdata$GUO...BvD.ID.number,fixed=T) # which is not an individual
@@ -33,7 +34,7 @@ files = list.files('data')
 alldata = filter(files[1])
 
 for(i in 2:length(files)){
-  show(files[i])
+  show(paste0(files[i]," ; ",i,"/",length(files)," ; total rows = ",nrow(alldata)))
   alldata=rbind(alldata,filter(files[i]))
 }
 
@@ -44,9 +45,9 @@ for(i in 2:length(files)){
 names(alldata) <- gsub('.','',names(alldata),fixed=T)
 
 if(purpose=="Ownership_links"){
-  write.csv(alldata,'data/links_Amadeus_Europe.csv',quote=T,row.names = F)
+  write.csv(alldata,'processed/links_Amadeus_Europe.csv',quote=T,row.names = F)
 }else {
-  write.csv(alldata[,2:12],'data/firms_Amadeus_EU.csv',quote=T,row.names = F)
+  write.csv(alldata[,2:12],'processed/firms_Amadeus_EU.csv',quote=T,row.names = F)
 }
 
 
