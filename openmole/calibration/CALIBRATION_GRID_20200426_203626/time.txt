@@ -1,0 +1,4 @@
+47:36:42;2y1m16d12h
+30.04G up; 5.78 G down
+70105 finished, 2972 failed
+

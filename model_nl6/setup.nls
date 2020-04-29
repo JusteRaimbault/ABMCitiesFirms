@@ -207,6 +207,11 @@ to setup:setup-distance-matrices
      set params:country-gravity-decay 1
      set cities:soc-distance-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0
   ]
+  ; idem for distance gravity
+  if params:gravity-decay = 0 [
+     set params:gravity-decay 1
+     set cities:geo-distance-matrix matrix:make-constant (length orderedcities) (length orderedcities) 0
+  ]
   
 end
 
