@@ -60,6 +60,9 @@ def click_validate(driver,element,attribute,attribute_value):
 def wait_for_element(driver,element,attribute,attribute_value,timeout=1000):
     WebDriverWait(driver, timeout).until(expected_conditions.presence_of_element_located((By.XPATH, "//"+element+"[@"+attribute+"='"+attribute_value+"']")))
 
+def wait_for_clickable(driver,element,attribute,attribute_value,timeout=1000):
+    WebDriverWait(driver, timeout).until(expected_conditions.element_to_be_clickable((By.XPATH, "//"+element+"[@"+attribute+"='"+attribute_value+"']")))
+
 def click(driver,element):
     action_chains.ActionChains(driver).click(element).perform()
 

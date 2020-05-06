@@ -41,7 +41,8 @@ while remaining:
             time.sleep(2+numpy.random.randint(8))
             print("Switch to export")
 
-            navigation.wait_for_element(driver,"select","id","component_FormatTypeSelectedId")
+            #navigation.wait_for_element(driver,"select","id","component_FormatTypeSelectedId")
+            navigation.wait_for_clickable(driver,"select","id","component_FormatTypeSelectedId")
             # format
             navigation.select(driver,"select","id","component_FormatTypeSelectedId","Custom.list.txt")
             navigation.select(driver,"select","id","component_RangeOptionSelectedId","Range")
