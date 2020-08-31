@@ -35,7 +35,7 @@ val firmLinks = Val[Double]
 val id = Val[Int]
 val replication = Val[Int]
 
-val cmds = Seq("experiments:setup-experiment ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
+val cmds = Seq("experiments:setup-experiment \"synthetic\"  ${setupScalingExponent} ${setupSectorsNumber} \"${setupSectorsMode}\" ${finalTime} "+
   "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}","experiments:run-experiment")
 
 val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
@@ -66,7 +66,7 @@ val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embed
 val purpose = "TARGETEDHIERARCHY_SYNTHETIC_GRID"
 
 val resfilename = ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv"
-val indics_hook = CSVHook(workDirectory / "exploration" / resfilename),arrayOnRow=true)
+val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow=true)
 
 //val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
 val env = LocalEnvironment(10)
@@ -75,7 +75,7 @@ val replications = Replication(
    //evaluation = (model on env by 20 hook indics_hook),
    evaluation = (model on env hook indics_hook),
    seed = replication,
-   replications = 20
+   sample = 20
    //replications = 1
 )
 
