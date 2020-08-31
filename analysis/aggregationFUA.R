@@ -22,6 +22,8 @@ ucdb <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/JRC_EC/GHS/GHS_STAT_UCDB2015
 ucdb <- st_transform(ucdb,st_crs(fuas))
 
 countries <- st_read('Data/','countries')
+#countries <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/Countries/'),'countries') # same
+
 #countries <- st_transform(countries,st_crs(fuas)) #makes no sense at this scale
 
 firms <- read.csv('Data/firms/amadeus_nodes.csv',sep=";",quote = "")
@@ -374,7 +376,8 @@ save(aggrnodes, aggrlinks, exportnodes, exportlinks, file='Data/firms/amadeus_ag
 # ! if scaling law, no pearson corr -> use rank corr !
 
 sucdb = ucdbfuas %>% filter(!is.na(eFUA_ID)) %>% group_by(eFUA_ID) %>% summarize(pop=sum(P15),gdp=sum(GDP15_SM))
-saggrnodes = left_join(aggrnodes,sucdb,by=c('eFUA_ID'='eFUA_ID'))
+sucdb$eFUA_ID=as.character(sucdb$eFUA_ID)
+saggrnodes = left_join(aggrnodes,sucdb,by=c('fua'='eFUA_ID'))
 
 cor.test(saggrnodes$turnover,saggrnodes$pop,method='pearson')
 cor.test(saggrnodes$turnover,saggrnodes$pop,method='spearman')
@@ -420,7 +423,7 @@ library(Matrix)
 library(reshape2)
 library(poweRlaw)
 
-g = graph_from_data_frame(aggrlinks,directed = T,vertices = aggrnodes)
+g = graph_from_data_frame(aggrlinks,directed = T,vertices = saggrnodes[,1:30])
 V(g)$lon = (V(g)$X - min(V(g)$X)) / (max(V(g)$X) - min(V(g)$X))
 V(g)$lat = (V(g)$Y - min(V(g)$Y)) / (max(V(g)$Y) - min(V(g)$Y))
 write_graph(g,file='Results/EmpiricalNetwork/fua_graph.gml',format='gml')
@@ -452,13 +455,16 @@ fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='
 # Communities
 A = get.adjacency(g,sparse = T)
 g_undir = graph_from_adjacency_matrix(adjmatrix = (A+t(A))/2,weighted = T,mode = "undirected")
+
+set.seed(42)
 communities_clauset = cluster_fast_greedy(g_undir)
+set.seed(42)
 communities_louvain = cluster_louvain(g_undir) 
 # 0.35 modularity in both cases
 
 # directed mod
-directedmodularity(communities_clauset$membership,A) # 0.3436751
-directedmodularity(communities_louvain$membership,A) # 0.3577386
+directedmodularity(communities_clauset$membership,A) # 0.3521929
+directedmodularity(communities_louvain$membership,A) # 0.361524
 
 # countries mod
 directedmodularity(V(g)$fuacountry,A) # 0.3200182
@@ -472,6 +478,23 @@ for(b in 1:bnum){
 mean(mods);sd(mods)
 
 # overlap between countries / communities
+
+
+###
+# Community map
+
+saggrnodes$Community = as.character(communities_louvain$membership)
+saggrnodes$Population = saggrnodes$pop
+comsizes = as.data.frame(table(communities_louvain$membership))
+keptcoms = as.character(comsizes[comsizes[,2]>5,1])
+saggrnodes$Community[!saggrnodes$Community%in%keptcoms]=NA
+
+map(data = saggrnodes,var = "Community", sizevar = "Population",
+    xlim=c(-10,30),ylim=c(35,60),
+    filename = 'Results/EmpiricalNetwork/map_communities_louvain.png',discrete = T,
+    width=22,height=20
+    )
+
 
 
 ###
