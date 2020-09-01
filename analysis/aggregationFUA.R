@@ -490,9 +490,9 @@ keptcoms = as.character(comsizes[comsizes[,2]>5,1])
 saggrnodes$Community[!saggrnodes$Community%in%keptcoms]=NA
 
 map(data = saggrnodes,var = "Community", sizevar = "Population",
-    xlim=c(-10,30),ylim=c(35,60),
+    xlim=c(-10,30),ylim=c(35,62),
     filename = 'Results/EmpiricalNetwork/map_communities_louvain.png',discrete = T,
-    width=22,height=20
+    width=25,height=20
     )
 
 

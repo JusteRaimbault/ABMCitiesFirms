@@ -14,7 +14,8 @@ generation='50000'
 
 res <- as.tbl(read.csv(paste0('openmole/calibration/',resdirpref,'/population',generation,'.csv')))
 res2 <- as.tbl(read.csv(paste0('openmole/calibration/',res2dirpref,'/population',generation,'.csv')))
-resdir=paste0('Results/Calibration/',res2dirpref);dir.create(resdir)
+resdir=paste0('Results/Calibration/',resdirpref);dir.create(resdir)
+resdir2=paste0('Results/Calibration/',res2dirpref);dir.create(resdir2)
 
 objectives = c("mselog","logmse")
 parameters = c("gravityDecay","countryGravityDecay","gammaSectors","gammaLinks","gammaOrigin","gammaDestination","finalTime")
@@ -24,20 +25,30 @@ res2 = res2[res2$evolution.samples>=20,]
 
 allres = rbind(cbind(res,type=rep('full',nrow(res))),cbind(res2,type=rep('no countries',nrow(res2)),countryGravityDecay=rep(0,nrow(res2))))
 
-paramnames = list(gammaOrigin = expression(gamma[F]),
-                  gammaDestination = expression(gamma[T]),
+paramnames = list(gammaOrigin = expression(gamma[O]),
+                  gammaDestination = expression(gamma[D]),
                   gammaLinks=expression(gamma[W]),
                   gammaSectors=expression(gamma[S]),
-                  gravityDecay=expression(d[ij]),
-                  countryGravityDecay=expression(g[ij]),
+                  gravityDecay=expression(d[0]),
+                  countryGravityDecay=expression(c[0]),
                   finalTime=expression(t[f])
                   )
+
+# full model
+for(param in parameters){
+  g=ggplot(res,aes_string(x="logmse",y="mselog",color=param,size='evolution.samples'))
+  g+geom_point(alpha=0.6)+xlab("log(Mean Squared Error)")+ylab("Mean Squared Error on log")+
+    scale_color_continuous(name=paramnames[[param]])+scale_size_continuous(name='Samples')+stdtheme
+  ggsave(paste0(resdir,'/pareto_color',param,'.png'),width=20,height=18,units='cm')
+}
+
+# all
 
 for(param in parameters){
   g=ggplot(allres,aes_string(x="logmse",y="mselog",color=param,size='evolution.samples',shape='type'))
   g+geom_point(alpha=0.6)+xlab("log(Mean Squared Error)")+ylab("Mean Squared Error on log")+
     scale_color_continuous(name=paramnames[[param]])+scale_size_continuous(name='Samples')+stdtheme
-  ggsave(paste0(resdir,'/pareto_color',param,'.png'),width=20,height=18,units='cm')
+  ggsave(paste0(resdir2,'/pareto_color',param,'.png'),width=20,height=18,units='cm')
 }
 
 ###
