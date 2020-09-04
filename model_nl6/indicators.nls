@@ -41,6 +41,32 @@ to indicators:compute-indicators
   
 end
 
+;;
+;
+to indicators:store-ts-indics
+  indicators:setup-network-indicators
+  
+  ifelse table:has-key? indicators:temporal-data "internationalization" [table:put indicators:temporal-data "internationalization" (lput indicators:internationalization (table:get indicators:temporal-data "internationalization"))][table:put indicators:temporal-data "internationalization" []]
+  ifelse table:has-key? indicators:temporal-data "metropolization" [table:put indicators:temporal-data "metropolization" (lput indicators:metropolization (table:get indicators:temporal-data "metropolization"))][table:put indicators:temporal-data "metropolization" []]
+  ifelse table:has-key? indicators:temporal-data "networkAvgCommunitySize" [table:put indicators:temporal-data "networkAvgCommunitySize" (lput indicators:network-average-community-size (table:get indicators:temporal-data "networkAvgCommunitySize"))][table:put indicators:temporal-data "networkAvgCommunitySize" []]
+  ifelse table:has-key? indicators:temporal-data "networkDegreeEntropy" [table:put indicators:temporal-data "networkDegreeEntropy" (lput indicators:network-weighted-degree-distribution-entropy (table:get indicators:temporal-data "networkDegreeEntropy"))][table:put indicators:temporal-data "networkDegreeEntropy" []]
+  ifelse table:has-key? indicators:temporal-data "flowsHierarchyAlpha" [table:put indicators:temporal-data "flowsHierarchyAlpha" (lput indicators:flows-distribution-ranksize (table:get indicators:temporal-data "flowsHierarchyAlpha"))][table:put indicators:temporal-data "flowsHierarchyAlpha" []]
+  ifelse table:has-key? indicators:temporal-data "rhoDegreeSize" [table:put indicators:temporal-data "rhoDegreeSize" (lput indicators:correlation-degree-size (table:get indicators:temporal-data "rhoDegreeSize"))][table:put indicators:temporal-data "rhoDegreeSize" []]
+  ifelse table:has-key? indicators:temporal-data "rhoFlowDistance" [table:put indicators:temporal-data "rhoFlowDistance" (lput indicators:correlation-flow-distance true (table:get indicators:temporal-data "rhoFlowDistance"))][table:put indicators:temporal-data "rhoFlowDistance" []]
+  ifelse table:has-key? indicators:temporal-data "networkDegreeHierarchyAlpha" [table:put indicators:temporal-data "networkDegreeHierarchyAlpha" (lput indicators:network-weighted-degree-distribution-ranksize (table:get indicators:temporal-data "networkDegreeHierarchyAlpha"))][table:put indicators:temporal-data "networkDegreeHierarchyAlpha" []]
+end
+
+to-report indicators:temporal-internationalization
+  report table:get indicators:temporal-data "internationalization"
+end
+
+to-report indicators:temporal-networkAvgCommunitySize
+  report table:get indicators:temporal-data "networkAvgCommunitySize"
+end
+
+to-report indicators:temporal-rhoDegreeSize
+  report table:get indicators:temporal-data "rhoDegreeSize"
+end
 
 ;;
 ; macro timesteps indicators

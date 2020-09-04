@@ -22,6 +22,9 @@ to setup:setup
     display:setup-display
   ]
     
+  set indicators:temporal-data table:make
+  set indicators:tracked (list "internationalization" "metropolization" "networkAvgCommunitySize" "networkDegreeEntropy" "flowsHierarchyAlpha" "rhoDegreeSize" "rhoFlowDistance" "networkDegreeHierarchyAlpha")
+  
   reset-ticks
   
 end
@@ -131,6 +134,7 @@ end
 ; load real data
 to setup:load-city-data
   set setup:cities-data but-first utils:file:read-csv setup:cities-file ";"
+  show setup:cities-data
   ;set setup:cities-data map [? -> map [?? -> read-from-string ??] ?] setup:cities-data ; all fields are numeric ? ! no - city name
 end
 

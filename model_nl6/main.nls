@@ -23,6 +23,14 @@ to main:go
   
   if runtime:headless? = 0 [display:update-display]
   
+  ;show indicators:timeseries-step
+  if indicators:timeseries-step > 0 [
+    if ticks mod indicators:timeseries-step = 0 [
+      show (word "storing indicators")
+      indicators:store-ts-indics 
+    ]
+  ]
+  
   tick
   
   ;; dirty to use exception as control flow !!!
@@ -37,6 +45,21 @@ to main:go-full-period
   repeat runtime:final-time [
     ;show ticks
     main:go
+  ]
+end
+
+;;
+; scenarios are: go half of the time; change parameters for interaction distance; go second half. Track indicators at time steps.
+to main:go-scenario [gravity-scale-factor country-scale-factor]
+  show (word "tssteo: " indicators:timeseries-step)
+  repeat runtime:final-time / 2 [
+     main:go
+  ]
+  ; change parameters
+  set params:gravity-decay params:gravity-decay * gravity-scale-factor
+  set params:country-gravity-decay params:country-gravity-decay * country-scale-factor
+  repeat runtime:final-time / 2 [
+     main:go
   ]
 end
 

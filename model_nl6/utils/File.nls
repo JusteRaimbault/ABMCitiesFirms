@@ -16,6 +16,7 @@ to-report utils:file:read-csv [filename delimiter]
   let row-list []
   foreach rows [
     ? ->
+    ;show ?
     set row-list lput (utils:string:explode delimiter ?) row-list
   ]
   report row-list

@@ -1,0 +1,79 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val finalTime = Val[Int]
+
+val gammaOrigin = Val[Double]
+val gammaDestination = Val[Double]
+val gammaLinks = Val[Double]
+val gammaSectors = Val[Double]
+val gravityDecay = Val[Double]
+val countryGravityDecay = Val[Double]
+
+val gravityScaleFactor = Val[Double]
+val countryScaleFactor = Val[Double]
+
+// indicators
+val internationalizationTS = Val[Array[Double]]
+val metropolizationTS = Val[Array[Double]]
+val networkAvgCommunitySizeTS = Val[Array[Double]]
+val networkDegreeEntropyTS = Val[Array[Double]]
+val flowsHierarchyTS = Val[Array[Double]]
+val rhoDegreeSizeTS = Val[Array[Array[Double]]]
+val rhoFlowDistanceTS = Val[Array[Double]]
+val networkDegreeHierarchyAlphaTS = Val[Array[Double]]
+
+val id = Val[Int]
+val replication = Val[Int]
+
+val cmds = Seq("experiments:setup-experiment \"real\" 1.0 1 \"log-normal\" ${finalTime} "+
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}"
+,"experiments:run-scenario-experiment ${gravityScaleFactor} ${countryScaleFactor}")
+
+val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+    (inputs,outputs) += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+      gravityDecay,countryGravityDecay,gravityScaleFactor,countryScaleFactor,id,replication),
+      gammaOrigin := 1.46,
+      gammaDestination := 2.0,
+      gammaSectors := 1.76,
+      gammaLinks := 6.43,
+      gravityDecay := 5972.0,
+      countryGravityDecay := 113.0,
+      finalTime := 5000,
+    outputs += internationalizationTS mapped "indicators:temporal-internationalization",
+    outputs += networkAvgCommunitySizeTS mapped "indicators:temporal-networkAvgCommunitySize",
+    outputs += rhoDegreeSizeTS mapped "indicators:temporal-rhoDegreeSize"
+)
+
+//val purpose = "APPLICATION_TEST"
+val purpose = "APPLICATION"
+
+val resfilename = ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv"
+val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow=true)
+
+//val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+val env = LocalEnvironment(10)
+//val env = SLURMEnvironment("jraimb02", "myria.criann.fr", queue = "2tcourt", wallTime = 20 minutes, nTasks = 1, memory = 2500, workDirectory = "/tmp", reservation = "xModelo")
+
+val replications = Replication(
+   //evaluation = (model on env by 4 hook indics_hook),
+   evaluation = (model on env hook indics_hook),
+   //evaluation = model hook indics_hook,
+   seed = replication,
+   //sample = 20
+   sample = 100
+)
+
+val exploration = DirectSampling(
+    evaluation = replications,
+    sampling = (
+      ((gravityScaleFactor in (0.1 to 1.0 by 0.1))
+      //((gravityScaleFactor is 0.5)
+       //x (countryScaleFactor is 0.5)
+       x (countryScaleFactor in (0.1 to 1.0 by 0.1))
+       )
+     withIndex id )
+)
+
+
+exploration

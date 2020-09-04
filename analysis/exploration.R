@@ -6,20 +6,21 @@ library(ggplot2)
 
 source(paste0(Sys.getenv('CS_HOME'),'/Organisation/Models/Utils/R/plots.R'))
 
-loadData <- function(pref,sep=','){
-  res <- as.tbl(read.csv(paste0(resdir,'data/',pref,'.csv'),stringsAsFactors = F,sep=sep))
+loadData <- function(pref,sep=',',resdir=NULL,addSepInName=''){
+  if(is.null(resdir)){resdir = paste0(pref,'/data/')}
+  res <- as.tbl(read.csv(paste0(resdir,pref,'.csv'),stringsAsFactors = F,sep=sep))
 
   # parse double arrays / rename
   corrindics=c("rhoDegreeSize","rhoFlowDistance","rhoFlowDistancePos")
   for(corrindic in corrindics){
-    res[,corrindic]=res[,paste0(corrindic,'0')];res[,paste0(corrindic,'0')]=NULL
-    res[,paste0(corrindic,'Min')]=res[,paste0(corrindic,'1')];res[,paste0(corrindic,'1')]=NULL
-    res[,paste0(corrindic,'Max')]=res[,paste0(corrindic,'2')];res[,paste0(corrindic,'2')]=NULL
+    res[,corrindic]=res[,paste0(corrindic,addSepInName,'0')];res[,paste0(corrindic,addSepInName,'0')]=NULL
+    res[,paste0(corrindic,'Min')]=res[,paste0(corrindic,addSepInName,'1')];res[,paste0(corrindic,addSepInName,'1')]=NULL
+    res[,paste0(corrindic,'Max')]=res[,paste0(corrindic,addSepInName,'2')];res[,paste0(corrindic,addSepInName,'2')]=NULL
   }
   hierarchyindics = c("flowsHierarchy","networkDegreeHierarchy")
   for(hierarchyindic in hierarchyindics){
-    res[,paste0(hierarchyindic,'Alpha')]=res[,paste0(hierarchyindic,'0')];res[,paste0(hierarchyindic,'0')]=NULL
-    res[,paste0(hierarchyindic,'RSquared')]=res[,paste0(hierarchyindic,'1')];res[,paste0(hierarchyindic,'1')]=NULL
+    res[,paste0(hierarchyindic,'Alpha')]=res[,paste0(hierarchyindic,addSepInName,'0')];res[,paste0(hierarchyindic,addSepInName,'0')]=NULL
+    res[,paste0(hierarchyindic,'RSquared')]=res[,paste0(hierarchyindic,addSepInName,'1')];res[,paste0(hierarchyindic,addSepInName,'1')]=NULL
   }
   return(res)
 }
@@ -202,6 +203,44 @@ for(countryGravityDecay in unique(res$countryGravityDecay)){
   }
 }
 
+
+
+##### hierarchy experiment
+
+resPrefix = '20200901_142525_TARGETEDHIERARCHY_SYNTHETIC_GRID'
+resdir = paste0(resPrefix,'/');dir.create(resdir)
+res <- loadData(resPrefix,resdir='../../model_nl6/exploration/',addSepInName = '.')
+resPrefix2 = '20200831_213603_TARGETEDHIERARCHY_SYNTHETIC_GRID'
+res<-rbind(res,loadData(resPrefix2,resdir='../../model_nl6/exploration/',addSepInName = '.'))
+
+data.frame(res %>% group_by(id) %>% summarize(count=n()))
+res = res[res$id>=4&res$setupScalingExponent>=0.5,]
+
+for(indicator in indicators){
+  g=ggplot(res,mapping = aes_string(x='setupScalingExponent',y=indicator,group='gravityDecay',color='gravityDecay'))
+  g+geom_point(pch='.')+geom_smooth()+xlab(expression(alpha))+stdtheme
+  ggsave(file=paste0(resdir,indicator,'-alpha_colorgravityDecay.png'),width=30,height=25,units='cm')
+}
+
+sres= res %>% group_by(id) %>% summarize(
+  gravityDecay = mean(gravityDecay),
+  setupScalingExponent = mean(setupScalingExponent),
+  internationalizationSd = sd(internationalization),internationalization=mean(internationalization),
+  metropolizationSd = sd(metropolization),metropolization=mean(metropolization),
+  networkAvgCommunitySizeSd = sd(networkAvgCommunitySize),networkAvgCommunitySize=mean(networkAvgCommunitySize),
+  networkDegreeEntropySd = sd(networkDegreeEntropy),networkDegreeEntropy=mean(networkDegreeEntropy),
+  flowsHierarchyAlphaSd = sd(flowsHierarchyAlpha),flowsHierarchyAlpha=mean(flowsHierarchyAlpha),
+  rhoDegreeSizeSd = sd(rhoDegreeSize),rhoDegreeSize=mean(rhoDegreeSize),
+  rhoFlowDistanceSd = sd(rhoFlowDistance),rhoFlowDistance=mean(rhoFlowDistance),
+  networkDegreeHierarchyAlphaSd = sd(networkDegreeHierarchyAlpha),networkDegreeHierarchyAlpha=mean(networkDegreeHierarchyAlpha)
+)
+
+for(indicator in indicators){
+  g=ggplot(sres,aes_string(x='setupScalingExponent',y=indicator,group='gravityDecay',color='gravityDecay'))
+  g+geom_point()+geom_line()+geom_errorbar(aes_string(ymin = paste0(indicator,'-',indicator,'Sd'),ymax=paste0(indicator,'+',indicator,'Sd')))+
+    xlab(expression(alpha))+ylab(ylabs[[indicator]])+scale_color_continuous(name=expression(d[0]))+stdtheme
+  ggsave(file=paste0(resdir,indicator,'-alpha_colorgravityDecay_errorBar.png'),width=20,height=18,units='cm')
+}
 
 
 

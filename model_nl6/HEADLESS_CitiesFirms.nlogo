@@ -109,6 +109,12 @@ globals [
   indicators:total-mse
   indicators:total-mselog
 
+  indicators:timeseries-step
+
+  ; tracking of time series
+  indicators:temporal-data
+  indicators:tracked
+
 ]
 
 
@@ -186,7 +192,7 @@ real-firmlinks-own [
 GRAPHICS-WINDOW
 340
 13
-951
+1182
 625
 -1
 -1
@@ -201,7 +207,7 @@ GRAPHICS-WINDOW
 0
 1
 0
-200
+277
 0
 200
 0

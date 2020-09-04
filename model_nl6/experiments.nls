@@ -52,6 +52,18 @@ to experiments:run-experiment
   indicators:setup-network-indicators
 end
 
+to experiments:run-scenario-experiment [gravity-scale-factor country-scale-factor]
+  set indicators:timeseries-step 50
+  show (word "setup indic ts step" indicators:timeseries-step)
+  carefully[
+    main:go-scenario gravity-scale-factor country-scale-factor
+  ][
+    print error-message
+    set runtime:failed? true
+  ]
+  ; time series are reported, no need to setup
+end
+
 
 ;;
 ; test 
@@ -70,4 +82,12 @@ to experiments:test-experiment-calibration
   experiments:run-experiment
   show (word "mse log = " indicators:mse-log)
   show (word "log mse = " indicators:log-mse)
+end
+
+to experiments:test-scenario
+  experiments:setup-experiment "real" 1.1 21 "log-normal" 400 0.5 0.5 0.5 0.5 500.0 0.1 1388528261
+  experiments:run-scenario-experiment 0.6 0.6
+  show indicators:temporal-internationalization
+  show indicators:temporal-networkAvgCommunitySize
+  show indicators:temporal-rhoDegreeSize
 end
