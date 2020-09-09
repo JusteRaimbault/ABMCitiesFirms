@@ -71,6 +71,8 @@ globals [
   runtime:max-gdp
   runtime:min-gdp
 
+  runtime:w-matrix
+
   ;;
   ; runtime indicator variables
   runtime:communities

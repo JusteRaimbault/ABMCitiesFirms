@@ -34,7 +34,7 @@ to main:go
   tick
   
   ;; dirty to use exception as control flow !!!
-  carefully [let t runtime:current-date][stop]
+  ;carefully [let t runtime:current-date][stop]
   
 end
 
@@ -51,16 +51,19 @@ end
 ;;
 ; scenarios are: go half of the time; change parameters for interaction distance; go second half. Track indicators at time steps.
 to main:go-scenario [gravity-scale-factor country-scale-factor]
-  show (word "tssteo: " indicators:timeseries-step)
+  show (word "ts step: " indicators:timeseries-step)
   repeat runtime:final-time / 2 [
      main:go
   ]
   ; change parameters
+  show (word "average link utility = " (mean map mean matrix:to-row-list links:link-utilities-matrix))
   set params:gravity-decay params:gravity-decay * gravity-scale-factor
   set params:country-gravity-decay params:country-gravity-decay * country-scale-factor
+  show (word "average link utility after params update = " (mean map mean matrix:to-row-list links:link-utilities-matrix))
   repeat runtime:final-time / 2 [
      main:go
   ]
+  show (word "average link utility at final time = " (mean map mean matrix:to-row-list links:link-utilities-matrix))
 end
 
 
