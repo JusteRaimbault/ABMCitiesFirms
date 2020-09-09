@@ -52,16 +52,17 @@ val resfilename = ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))
 val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow=true)
 
 //val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
-val env = LocalEnvironment(10)
+//val env = LocalEnvironment(10)
 //val env = SLURMEnvironment("jraimb02", "myria.criann.fr", queue = "2tcourt", wallTime = 20 minutes, nTasks = 1, memory = 2500, workDirectory = "/tmp", reservation = "xModelo")
+val env = SGEEnvironment(memory = 4 gigabytes, localSubmission = true, wallTime = 2 hour, workDirectory = "/home/uceejra/Scratch/.tmp")
 
 val replications = Replication(
-   //evaluation = (model on env by 4 hook indics_hook),
-   evaluation = (model on env hook indics_hook),
+   evaluation = (model on env by 4 hook indics_hook),
+   //evaluation = (model on env hook indics_hook),
    //evaluation = model hook indics_hook,
    seed = replication,
-   //sample = 20
-   sample = 100
+   sample = 20
+   //sample = 100
 )
 
 val exploration = DirectSampling(
@@ -69,7 +70,7 @@ val exploration = DirectSampling(
     sampling = (
       ((gravityScaleFactor in (0.1 to 1.0 by 0.1))
       //((gravityScaleFactor is 0.5)
-       //x (countryScaleFactor is 0.5)
+      // x (countryScaleFactor is 0.5)
        x (countryScaleFactor in (0.1 to 1.0 by 0.1))
        )
      withIndex id )
