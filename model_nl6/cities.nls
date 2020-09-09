@@ -17,13 +17,15 @@ to cities:evolve-cities
     ; TODO 
     
     
-    cities:compute-link-utility-matrix
+    ;cities:compute-link-utility-matrixx
   ]
   
   ; FIXME ok as soon as date-related indics only !
   if runtime:current-date-index < (length runtime:dates - 1) [
     indicators:update-indicators
   ]
+  
+  cities:update-link-utility-matrix
     
 end
 
@@ -153,10 +155,8 @@ to cities:compute-link-utility-matrix
   let etot sum (map [? -> [city:gdp] of ? ] orderedcities)
   
   ; possibly previous links
-  links:compute-network-adjacency-matrix
-  let wtot sum (map sum matrix:to-row-list links:network-adjacency-matrix)
-  let w matrix:make-constant (length orderedcities) (length orderedcities) 1
-  if wtot > 0 [set w (matrix:map [? -> (? / wtot) ^ params:gamma-links] links:network-adjacency-matrix)]
+  let w cities:w-matrix orderedcities
+  set runtime:w-matrix w
   
   ; sector composition
   cities:compute-sector-proximity-matrix
@@ -169,6 +169,25 @@ to cities:compute-link-utility-matrix
   ; do not forget to put diag at 0 to avoid self links
   foreach (utils:list:seq 0 (count cities - 1) 1) [i -> matrix:set links:link-utilities-matrix i i 0]
 
+end
+
+to-report cities:w-matrix [orderedcities]
+  links:compute-network-adjacency-matrix
+  let wtot sum (map sum matrix:to-row-list links:network-adjacency-matrix)
+  let w matrix:make-constant (length orderedcities) (length orderedcities) 1
+  if wtot > 0 [set w (matrix:map [? -> ((1 + ?) / (wtot + 1)) ^ params:gamma-links] links:network-adjacency-matrix)]
+  report w
+end
+
+;;
+; update when only link weights are moving
+; assumes that runtime:w-matrix is set and is the previous one
+to cities:update-link-utility-matrix
+  let orderedcities sort-on [cities:number] cities
+  let w cities:w-matrix orderedcities
+  set links:link-utilities-matrix (matrix:times-element-wise links:link-utilities-matrix w (matrix:map [? -> 1 / ?] runtime:w-matrix))
+  set runtime:w-matrix w
+  ;show (word "average utility = " mean map mean matrix:to-row-list links:link-utilities-matrix)
 end
 
 

@@ -57,6 +57,8 @@ globals [
   runtime:max-gdp
   runtime:min-gdp
 
+  runtime:w-matrix
+
   ; runtime indicator variables
 
   runtime:communities
@@ -65,7 +67,7 @@ globals [
 
   ;;
   ; for synthetic mode
-  runtime:final-time
+  ;runtime:final-time
 
   runtime:dates
   runtime:current-date-index
@@ -97,6 +99,9 @@ globals [
   indicators:total-mse
   indicators:total-mselog
 
+  indicators:temporal-data
+  indicators:tracked
+  indicators:timeseries-step
 
 
 ]
@@ -176,7 +181,6 @@ real-firmlinks-own [
  ;real-firmlink:volume
  real-firmlink:year
 ]
-
 
 
 
@@ -335,7 +339,7 @@ params:gamma-origin
 params:gamma-origin
 0
 10
-1.0
+1.75
 0.05
 1
 NIL
@@ -350,7 +354,7 @@ params:gamma-destination
 params:gamma-destination
 0
 10
-1.0
+1.6
 0.05
 1
 NIL
@@ -365,7 +369,7 @@ params:gamma-links
 params:gamma-links
 0
 10
-5.0
+0.05
 0.05
 1
 NIL
@@ -380,7 +384,7 @@ params:gamma-sectors
 params:gamma-sectors
 0
 10
-0.1
+1.9
 0.05
 1
 NIL
@@ -395,7 +399,7 @@ params:gravity-decay
 params:gravity-decay
 1
 3000
-501.0
+1551.0
 50
 1
 NIL
@@ -410,7 +414,7 @@ params:country-gravity-decay
 params:country-gravity-decay
 1
 50000
-2.0
+151.0
 50
 1
 NIL
@@ -418,14 +422,14 @@ HORIZONTAL
 
 SLIDER
 12
-542
+530
 221
-575
+563
 runtime:city-evolution-scale
 runtime:city-evolution-scale
 1
 10000
-1500.0
+11.0
 10
 1
 NIL
@@ -457,7 +461,7 @@ setup:seed
 setup:seed
 -100000
 100000
-1.388528261E9
+0.0
 1
 1
 NIL
@@ -559,6 +563,21 @@ indicators:total-mselog
 17
 1
 11
+
+SLIDER
+15
+566
+187
+599
+runtime:final-time
+runtime:final-time
+0
+1000
+318.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -53,7 +53,7 @@ to setup:setup-globals
   ; TODO allow hist traj on semi-synth data
   if setup:setup-type != "real" and cities:structure-evolution-mode = "historical" [error "Historical trajectories can not be run on synthetic data"]
   
-  random-seed setup:seed
+  ifelse setup:seed != 0 [random-seed setup:seed][random-seed random 100000]
   
   ;set setup:cities-file "setup/cities.csv"
   ;set setup:network-file "setup/links.csv"
@@ -94,7 +94,8 @@ to setup:setup-headless
   
   set cities:structure-evolution-mode "fixed"
   
-  set runtime:city-evolution-scale 10000.0 ; fixed anyway
+  ;set runtime:city-evolution-scale 10000.0 ; fixed anyway
+  set runtime:city-evolution-scale 10
   
 end
   
