@@ -38,8 +38,9 @@ map<- function(data,var,sizevar,filename,discrete=FALSE,legendtitle=NULL,legends
   g=ggplot()+
     #geom_map(data = WorldData, map = WorldData,aes(group = group, map_id=region),fill = "white", colour = "#7f7f7f", size=0.1) + 
     geom_sf(data=countries,fill = "white", colour = "#7f7f7f", size=0.1)+
-    geom_point(data=data,aes_string(x='X',y='Y',color=var,size=sizevar),alpha=0.6)+
-    scale_size_area(name=ifelse(is.null(legendsizetitle),sizevar,legendsizetitle))+
+    geom_point(data=data,aes_string(x='X',y='Y',color=var,size=sizevar),alpha=0.5)+
+    #scale_size_area(name=ifelse(is.null(legendsizetitle),sizevar,legendsizetitle))+#,trans="log10")+
+    scale_size(name=ifelse(is.null(legendsizetitle),sizevar,legendsizetitle),range=c(1,8))+#,trans="log10")+
     #geom_map(data = areasmorph, map=WorldData,
     #         aes(fill=moran2015),#, map_id=region),
     #         colour="#7f7f7f", size=0.5) +

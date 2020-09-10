@@ -7,7 +7,8 @@ library(ggplot2)
 source(paste0(Sys.getenv('CS_HOME'),'/Organisation/Models/Utils/R/plots.R'))
 
 #res <- as.tbl(read.csv(file='model_nl6/exploration/20200904_032159_APPLICATION.csv'))
-res <- as.tbl(read.csv(file='model_nl6/exploration/20200904_092344_APPLICATION.csv'))
+#res <- as.tbl(read.csv(file='model_nl6/exploration/20200904_092344_APPLICATION.csv'))
+res <- as.tbl(read.csv(file='model_nl6/exploration/20200910_111006_APPLICATION.csv'))
 
 params = c("countryScaleFactor","gravityScaleFactor","id")
 
@@ -28,14 +29,30 @@ for(t in seq(from=0,to=tmax,by=1)){
 
 
 g=ggplot(tdata,aes(x=time,y=internationalization,color=gravityScaleFactor,group=gravityScaleFactor))
-g+geom_point(pch='.')+geom_smooth()+facet_wrap(~countryScaleFactor)
+g+geom_smooth()+facet_wrap(~countryScaleFactor)
 
 g=ggplot(tdata,aes(x=time,y=networkAvgCommunitySize,color=gravityScaleFactor,group=gravityScaleFactor))
-g+geom_point(pch='.')+geom_smooth()+facet_wrap(~countryScaleFactor)
+g+geom_smooth()+facet_wrap(~countryScaleFactor)
 
 g=ggplot(tdata,aes(x=time,y=rhoDegreeSize,color=gravityScaleFactor,group=gravityScaleFactor))
-g+geom_point(pch='.')+geom_smooth()+facet_wrap(~countryScaleFactor)
+g+geom_smooth()+facet_wrap(~countryScaleFactor)
 
 
+# statistical tests
 
+computePvalMat <- function(indicvals){
+  pvalmat = matrix(0,length(unique(res$gravityScaleFactor)),length(unique(res$countryScaleFactor)))
+  gravityScaleFactors = sort(unique(res$gravityScaleFactor));countryScaleFactors = sort(unique(res$countryScaleFactor))
+  ref = indicvals[res$gravityScaleFactor==1.0&res$countryScaleFactor==1.0]
+  for(i in 1:length(gravityScaleFactors)){
+    for(j in 1:length(countryScaleFactors)){
+      pvalmat[i,j] = ks.test(x=indicvals[res$gravityScaleFactor==gravityScaleFactors[i]&res$countryScaleFactor==countryScaleFactors[j]],y=ref)$p.value
+    }
+  }
+  return(pvalmat)
+}
+
+computePvalMat(res$internationalizationTS.98)
+computePvalMat(res$networkAvgCommunitySizeTS.98)
+computePvalMat(res$rhoDegreeSizeTS.98.0)
 
