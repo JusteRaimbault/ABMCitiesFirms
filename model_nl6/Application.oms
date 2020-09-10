@@ -36,7 +36,7 @@ val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embed
       gammaOrigin := 1.46,
       gammaDestination := 2.0,
       gammaSectors := 1.76,
-      gammaLinks := 6.43,
+      gammaLinks := 1.0,
       gravityDecay := 5972.0,
       countryGravityDecay := 113.0,
       finalTime := 5000,
@@ -45,8 +45,8 @@ val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embed
     outputs += rhoDegreeSizeTS mapped "indicators:temporal-rhoDegreeSize"
 )
 
-//val purpose = "APPLICATION_TEST"
-val purpose = "APPLICATION"
+val purpose = "APPLICATION_TEST"
+//val purpose = "APPLICATION"
 
 val resfilename = ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv"
 val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow=true)
@@ -57,21 +57,21 @@ val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow
 val env = SGEEnvironment(memory = 4 gigabytes, localSubmission = true, wallTime = 2 hour, workDirectory = "/home/uceejra/Scratch/.tmp")
 
 val replications = Replication(
-   evaluation = (model on env by 4 hook indics_hook),
-   //evaluation = (model on env hook indics_hook),
+   //evaluation = (model on env by 4 hook indics_hook),
+   evaluation = (model on env by 1 hook indics_hook),
    //evaluation = model hook indics_hook,
    seed = replication,
-   sample = 20
+   sample = 10
    //sample = 100
 )
 
 val exploration = DirectSampling(
     evaluation = replications,
     sampling = (
-      ((gravityScaleFactor in (0.1 to 1.0 by 0.1))
-      //((gravityScaleFactor is 0.5)
-      // x (countryScaleFactor is 0.5)
-       x (countryScaleFactor in (0.1 to 1.0 by 0.1))
+      //((gravityScaleFactor in (0.1 to 1.0 by 0.1))
+      ((gravityScaleFactor in Seq(0.5,1.0))
+       x (countryScaleFactor in Seq(0.5,1.0))
+      // x (countryScaleFactor in (0.1 to 1.0 by 0.1))
        )
      withIndex id )
 )
