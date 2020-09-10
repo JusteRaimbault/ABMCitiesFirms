@@ -73,7 +73,7 @@ to experiments:test-experiment
   ;"${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} (random 100000)
   ;experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 2100.0 1388528261
   ;experiments:setup-experiment "synthetic" 1.1 50 "log-normal" 5000 0.0 0.0 0.0 0.2 500.0 0.0 1388528261
-  experiments:setup-experiment "real" 1.0 1 "log-normal" 200 1.46 2.0 1.0 1.76 5972.0 113.0 (random 100000)
+  experiments:setup-experiment "real" 1.0 1 "log-normal" 200 1.46 2.0 0.0 1.76 5972.0 113.0 (random 100000)
   
   ;experiments:run-experiment
   ;indicators:compute-indicators
