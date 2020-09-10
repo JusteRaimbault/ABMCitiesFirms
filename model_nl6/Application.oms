@@ -33,9 +33,9 @@ val cmds = Seq("experiments:setup-experiment \"real\" 1.0 1 \"log-normal\" ${fin
 val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
     (inputs,outputs) += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
       gravityDecay,countryGravityDecay,gravityScaleFactor,countryScaleFactor,id,replication),
-      gammaOrigin := 1.46,
-      gammaDestination := 2.0,
-      gammaSectors := 1.76,
+      gammaOrigin := 1.0,
+      gammaDestination := 1.0,
+      gammaSectors := 1.0,
       gammaLinks := 0.0,
       gravityDecay := 5972.0,
       countryGravityDecay := 113.0,
@@ -45,8 +45,8 @@ val model = NetLogo6Task(workDirectory / "HEADLESS_CitiesFirms.nlogo",cmds,embed
     outputs += rhoDegreeSizeTS mapped "indicators:temporal-rhoDegreeSize"
 )
 
-val purpose = "APPLICATION_TEST"
-//val purpose = "APPLICATION"
+//val purpose = "APPLICATION_TEST"
+val purpose = "APPLICATION"
 
 val resfilename = ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv"
 val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow=true)
@@ -54,24 +54,24 @@ val indics_hook = CSVHook(workDirectory / "exploration" / resfilename,arrayOnRow
 //val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
 //val env = LocalEnvironment(10)
 //val env = SLURMEnvironment("jraimb02", "myria.criann.fr", queue = "2tcourt", wallTime = 20 minutes, nTasks = 1, memory = 2500, workDirectory = "/tmp", reservation = "xModelo")
-val env = SGEEnvironment(memory = 4 gigabytes, localSubmission = true, wallTime = 2 hour, workDirectory = "/home/uceejra/Scratch/.tmp")
+val env = SGEEnvironment(memory = 2 gigabytes, localSubmission = true, wallTime = 30 minutes, workDirectory = "/home/uceejra/Scratch/.tmp")
 
 val replications = Replication(
-   //evaluation = (model on env by 4 hook indics_hook),
-   evaluation = (model on env by 1 hook indics_hook),
+   evaluation = (model on env by 2 hook indics_hook),
+   //evaluation = (model on env by 1 hook indics_hook),
    //evaluation = model hook indics_hook,
    seed = replication,
-   sample = 10
-   //sample = 100
+   //sample = 10
+   sample = 100
 )
 
 val exploration = DirectSampling(
     evaluation = replications,
     sampling = (
-      //((gravityScaleFactor in (0.1 to 1.0 by 0.1))
-      ((gravityScaleFactor in Seq(0.5,1.0))
-       x (countryScaleFactor in Seq(0.5,1.0))
-      // x (countryScaleFactor in (0.1 to 1.0 by 0.1))
+      ((gravityScaleFactor in (0.2 to 1.0 by 0.2))
+      //((gravityScaleFactor in Seq(0.5,1.0))
+      // x (countryScaleFactor in Seq(0.5,1.0))
+       x (countryScaleFactor in (0.2 to 1.0 by 0.2))
        )
      withIndex id )
 )
