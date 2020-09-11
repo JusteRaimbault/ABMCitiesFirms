@@ -13,6 +13,17 @@ directedmodularity<-function(membership,adjacency){
   return(res/m)
 }
 
+maxmodularity<-function(membership,adjacency){
+  m=sum(adjacency)/2
+  kout=rowSums(adjacency);kin=colSums(adjacency)
+  res = 0;k=length(unique(membership))
+  for(c in unique(membership)){
+    inds=which(membership==c)
+    res = res + 2*m - sum(kin[inds])*sum(kout[inds])/(2*m) 
+  }
+  return(res/(2*m))
+}
+
 
 fitDistrPowerLaw<-function(x,xlab='x',ylab='CDF',file='fitDistrPowerLaw.png'){
   degpowerlaw = conpl$new(x)

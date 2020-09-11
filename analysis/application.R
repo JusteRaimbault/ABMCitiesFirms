@@ -19,7 +19,7 @@ indicators = c("internationalization","metropolization","networkAvgCommunitySize
 )
 
 tmax = 98
-tstep = 500
+tstep = 50
 
 tdata = data.frame()
 for(t in seq(from=0,to=tmax,by=1)){

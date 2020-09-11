@@ -477,6 +477,9 @@ for(b in 1:bnum){
 }
 mean(mods);sd(mods)
 
+# max modularity?
+maxmodularity(communities_louvain$membership,A)
+
 # overlap between countries / communities
 
 
@@ -504,6 +507,7 @@ map(data = saggrnodes,var = "Community", sizevar = "Turnover",
 # construct flow data
 aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('from_fua'='fua'));names(aggrlinks)[4:5]<-c("from_turnover","from_country")
 aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('to_fua'='fua'));names(aggrlinks)[6:7]<-c("to_turnover","to_country")
+sectornames = names(aggrnodes)[3:21]
 
 # ! still link with zero weight ?
 
@@ -636,7 +640,9 @@ dcultdf$distance[is.na(dcultdf$distance)]=1000 # force no links for couples of c
 dcultdf$from_country=as.numeric(dcultdf$from_country) # actually 29 levels - ok
 dcultdf$to_country=as.numeric(dcultdf$to_country)
 write.table(dcultdf,file='model_nl6/setup/fixedeffects.csv',row.names = F,sep=";",quote = F)
-
+#dcultdf <- read.table(file='model_nl6/setup/fixedeffects.csv',sep=";",header=T)
+#dcultdf$distance[dcultdf$distance==1000]<-rep(NA,length(which(dcultdf$distance==1000))) # put NA again for summary stats
+#summary(as.numeric(dcultdf$distance))
 
 ###
 # random effects?
