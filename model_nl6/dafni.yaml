@@ -1,7 +1,7 @@
 kind: Model
 apiVersion: v1alpha3
 metadata:
-  displayName: ABMCitiesFirms-1.0-
+  displayName: ABMCitiesFirms-1.0-51e7589763
   name: abmcitiesfirms
   type: Calibration
   summary: Calibration of an urban network ABM using NSGA2 algorithm in OpenMOLE.
