@@ -1,0 +1,32 @@
+kind: Model
+apiVersion: v1alpha3
+metadata:
+  displayName: ABMCitiesFirms-1.0-
+  name: abmcitiesfirms
+  type: Calibration
+  summary: Calibration of an urban network ABM using NSGA2 algorithm in OpenMOLE.
+  description: >
+    Runs OpenMOLE to calibrate the NetLogo model (see https://github.com/JusteRaimbault/ABMCitiesFirms).
+
+spec:
+  inputs:
+    env:
+      - name: ISLANDS
+        title: Islands
+        desc: Number of islands.
+        type: integer
+        default: 500
+        min: 1
+        max: 1000
+      - name: TERMINATION
+        title: Termination
+        desc: Number of generations.
+        type: integer
+        default: 10000
+        min: 1
+        max: 100000
+  outputs:
+    datasets:
+      - name: /data/outputs
+        type: directory
+        desc: Result files.
