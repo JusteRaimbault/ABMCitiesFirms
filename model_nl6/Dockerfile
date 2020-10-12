@@ -4,6 +4,8 @@ FROM openmole/openmole:latest
 
 RUN mkdir -p /data/outputs
 
+RUN mkdir -p /data/model
+
 COPY . /data/model
 
 WORKDIR /data/model
