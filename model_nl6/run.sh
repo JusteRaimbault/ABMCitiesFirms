@@ -1,4 +1,5 @@
 #!/bin/sh
+cd /root/model
 (cat <<END
 oml
 oml
