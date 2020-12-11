@@ -9,6 +9,7 @@ source(paste0(Sys.getenv("CS_HOME"),'/Organisation/Models/Utils/R/plots.R'))
 
 
 resdirpref='CALIBRATION_GRID_20200305_092250/'
+#resdirpref='CALIBRATION_20201128_215412/'
 res2dirpref='CALIBRATION_NOCOUNTRY_GRID_20200423_172109/'
 generation='50000'
 
