@@ -93,36 +93,66 @@ mean((log(d$intweight)-log(poisson2$fitted))^2)
 #https://en.wikipedia.org/wiki/Zero-inflated_model https://cran.r-project.org/web/packages/pscl/pscl.pdf
 
 library(pscl)
-library(bit64)
+#library(bit64)
 source('analysis/functions.R')
 
 load('Data/firms/amadeus_aggregnw.RData')
 load('Data/firms/amadeus_saggregnw.RData')
 
-d = stataggrlinks[stataggrlinks$distance>0,]
+dz = stataggrlinks[stataggrlinks$distance>0,]
 # find missing pairs
-d$id = paste0(d$from_fua,d$to_fua)
+dz$id = paste0(dz$from_fua,dz$to_fua)
 fuasids = unique(saggrnodes$fua)
 dmiss=data.frame(from_fua = c(sapply(fuasids,function(i){rep(i,length(fuasids))})),to_fua =rep(fuasids,length(fuasids)))
 dmiss$id = paste0(dmiss$from_fua,dmiss$to_fua)
-dmiss = dmiss[dmiss$from_fua!=dmiss$to_fua&!(dmiss$id%in%d$id),]
+dmiss = dmiss[dmiss$from_fua!=dmiss$to_fua&!(dmiss$id%in%dz$id),]
 dmiss=left_join(dmiss,distsdf,by=c("from_fua"="Var1","to_fua"="Var2"));names(dmiss)[4]<-"distance"
 dmiss = left_join(dmiss,mprox,by=c('from_fua'='Var1','to_fua'='Var2'));names(dmiss)[5]<-"sim"
 dmiss = left_join(dmiss,aggrnodes[,c("fua","turnover","fuacountry")],by=c('from_fua'='fua'));names(dmiss)[6:7]<-c("from_turnover","from_country")
 dmiss = left_join(dmiss,aggrnodes[,c("fua","turnover","fuacountry")],by=c('to_fua'='fua'));names(dmiss)[8:9]<-c("to_turnover","to_country")
 dmiss$weight = rep(0,nrow(dmiss))
 
-d = bind_rows(d,as.tbl(dmiss[,names(d)]))
+dz = bind_rows(dz,as.tbl(dmiss[,names(dz)]))
 
+# tests
+#d$intweight=as.integer(floor(d$weight)) # numbers too large for ints
 #d$intweight = as.integer64(floor(d$weight))
-d$intweight = round(d$weight/10000)
 #d$intweight = round(ifelse(d$weight==0,0,log(d$weight)))
 
-#zinflpoisson <- zeroinfl_64(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country, dist="poisson")
-zinflpoisson <- zeroinfl(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+sim, dist="poisson")
-summary(zinflpoisson)
+# min(dz$weight[dz$weight>0]) = 60 -> /10 keeps all non zero values after rounding, and provides integers needed for the models
+dz$intweight = round(dz$weight/10)
 
-1 - sum((d$intweight - fitted(zinflpoisson))^2) / sum((d$intweight - mean(d$intweight) )^2)
+#min(dz$sim[dz$sim>0])=0.0001680434 # -> add much smaller epsilon to zeros to take log
+dz$sim[dz$sim==0]=1e-8
+# taking log increases zeroinfl R2 from 0.15 to 0.16
+
+#zinflpoisson <- zeroinfl(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country, dist="poisson")
+zinflpoisson <- pscl::zeroinfl(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim) | 1, dist="poisson")
+summary(zinflpoisson)
+1 - sum((dz$intweight - fitted(zinflpoisson))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+
+zinflpoisson2 <- pscl::zeroinfl(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim), dist="poisson")
+summary(zinflpoisson2)
+1 - sum((dz$intweight - fitted(zinflpoisson2))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+
+# taking a zero link poisson instead of binomial sligthly increases R2 but negligible
+hurdle1 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)|1,
+                        dist="poisson", zero.dist = "poisson")
+summary(hurdle1)
+1 - sum((dz$intweight - fitted(hurdle1))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+
+hurdle2 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim),
+                        dist="poisson", zero.dist = "poisson")
+summary(hurdle2)
+1 - sum((dz$intweight - fitted(hurdle2))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+
+
+# with country fixed effects? -> pb solving, singular
+hurdle3 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country,
+                        dist="poisson", zero.dist = "poisson")
+summary(hurdle3)
+1 - sum((dz$intweight - fitted(hurdle3))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+# 0.399 but not valid (NA estim std errors, pvals)
 
 
 
