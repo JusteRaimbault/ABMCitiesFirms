@@ -379,6 +379,10 @@ sucdb = ucdbfuas %>% filter(!is.na(eFUA_ID)) %>% group_by(eFUA_ID) %>% summarize
 sucdb$eFUA_ID=as.character(sucdb$eFUA_ID)
 saggrnodes = left_join(aggrnodes,sucdb,by=c('fua'='eFUA_ID'))
 
+# 's' for summarized
+save(sucdb,saggrnodes, file='Data/firms/amadeus_saggregnw.RData')
+#load('Data/firms/amadeus_saggregnw.RData')
+
 cor.test(saggrnodes$turnover,saggrnodes$pop,method='pearson')
 cor.test(saggrnodes$turnover,saggrnodes$pop,method='spearman')
 
@@ -503,10 +507,11 @@ map(data = saggrnodes,var = "Community", sizevar = "Turnover",
 
 ###
 # Statistical analysis
+#  -> prepare data for statistical models
 
 # construct flow data
-aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('from_fua'='fua'));names(aggrlinks)[4:5]<-c("from_turnover","from_country")
-aggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('to_fua'='fua'));names(aggrlinks)[6:7]<-c("to_turnover","to_country")
+stataggrlinks = left_join(aggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('from_fua'='fua'));names(stataggrlinks)[4:5]<-c("from_turnover","from_country")
+stataggrlinks = left_join(stataggrlinks,aggrnodes[,c("fua","turnover","fuacountry")],by=c('to_fua'='fua'));names(stataggrlinks)[6:7]<-c("to_turnover","to_country")
 sectornames = names(aggrnodes)[3:21]
 
 # ! still link with zero weight ?
@@ -516,143 +521,20 @@ dists = spDists(as.matrix(aggrnodes[,c("X","Y")]))
 rownames(dists)<- aggrnodes$fua;colnames(dists)<- aggrnodes$fua
 distsdf = melt(dists)
 distsdf$Var1=as.character(distsdf$Var1);distsdf$Var2=as.character(distsdf$Var2)
-aggrlinks=left_join(aggrlinks,distsdf,by=c("from_fua"="Var1","to_fua"="Var2"));names(aggrlinks)[8]<-"distance"
+stataggrlinks=left_join(stataggrlinks,distsdf,by=c("from_fua"="Var1","to_fua"="Var2"));names(stataggrlinks)[8]<-"distance"
 
 # cosine similarity: matrix product
 proximities = as.matrix(aggrnodes[,sectornames])%*%t(as.matrix(aggrnodes[,sectornames]))
 rownames(proximities)<-aggrnodes$fua;colnames(proximities)<-aggrnodes$fua
 mprox = melt(proximities);mprox$Var1=as.character(mprox$Var1);mprox$Var2 = as.character(mprox$Var2)
-aggrlinks = left_join(aggrlinks,mprox,by=c('from_fua'='Var1','to_fua'='Var2'))
-names(aggrlinks)[9]<-c("sim")
+stataggrlinks = left_join(stataggrlinks,mprox,by=c('from_fua'='Var1','to_fua'='Var2'))
+names(stataggrlinks)[9]<-c("sim")
 
-d = aggrlinks[aggrlinks$distance>0&aggrlinks$weight>0&aggrlinks$from_turnover>0&aggrlinks$to_turnover>0,]
+# 2021/06/15: added distsdf and mprox in saved data to extend analysis to zeroinfl in statistics
+save(stataggrlinks,distsdf,mprox,file='Data/firms/amadeus_stataggrlinks.RData')
 
+# -> stat analysis in statistic.R
 
-## Statistical models
-# Model 1: OLS - distance only
-model1 = lm(data=d,log(weight)~log(distance))
-summary(model1)
-AIC(model1)
-mean(model1$residuals^2)
-#mean((log(d$weight)-model1$fitted.values)^2) # same as using residuals
-
-# Model 2: country fixed effects
-model2 = lm(data=d,log(weight)~log(distance)+from_country+to_country)
-summary(model2)
-AIC(model2)
-mean(model2$residuals^2)
-
-model2b =  lm(data=d,log(weight)~log(distance)+interaction(from_country,to_country))
-summary(model2b)
-head(summary(model2b)$coefficients)
-AIC(model2b)
-(length(which(summary(model2b)$coefficients[,4]<0.1))-2) / (nrow(summary(model2b)$coefficients) - 2)
-mean(model2b$residuals^2)
-
-##
-# model 3: add O/D
-model3 <- lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover))
-summary(model3)
-AIC(model3)
-mean(model3$residuals^2)
-
-##
-# model 4: everything: !  include proximity (to justify multiple factors in the ABM)
-
-model4a = lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+log(sim))
-summary(model4a)
-AIC(model4a)
-mean(model4a$residuals^2)
-
-# - fixed effects similar to constrained spatial interaction models! (check practical 2-3 spInt)
-
-# country - ! this is not a fixed effect, should construct dummies to do it by hand
-# actually it is - factors are automatically transformed to dummies
-model4 = lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country)
-summary(model4)
-AIC(model4)
-mean(model4$residuals^2)
-
-
-# country pair
-model4b = lm(data=d,log(weight)~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+interaction(from_country,to_country))
-summary(model4b)
-head(summary(model4b)$coefficients)
-AIC(model4b)
-(length(which(summary(model4b)$coefficients[,4]<0.1))-5) / (nrow(summary(model4b)$coefficients) - 5)
-mean(model4b$residuals^2)
-
-
-# model 5
-#  poisson models
-d$intweight = floor(d$weight)
-poisson <- glm(data=d,intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country,family = poisson(link='log'))
-summary(poisson)
-#mean((d$intweight - fitted(poisson))^2)
-#mean((log(d$intweight) - log(fitted(poisson)))^2)
-# 'hand' rsquared for the poisson model
-1 - sum((d$intweight - fitted(poisson))^2) / sum((d$intweight - mean(d$intweight) )^2)
-mean((log(d$intweight)-log(poisson$fitted))^2)
-
-
-poisson2 <- glm(data=d,intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+interaction(from_country,to_country),family = poisson(link='log'))
-summary(poisson2)
-head(summary(poisson2)$coefficients)
-AIC(poisson2)
-1 - sum((d$intweight - fitted(poisson2))^2) / sum((d$intweight - mean(d$intweight) )^2)
-#1 - sum((log(d$intweight) - log(fitted(poisson2)))^2) / sum((log(d$intweight) - mean(log(d$intweight)))^2)
-(length(which(summary(poisson2)$coefficients[,4]<0.1))-5) / (nrow(summary(poisson2)$coefficients) - 5)
-mean((log(d$intweight)-log(poisson2$fitted))^2)
-
-# note that origin/destination constrained models do not make sense here as we have the proportion of ownership.
-
-
-
-##
-# stratified regression
-library(nlme)
-lmList(data=d,(log(weight)~log(distance)+log(from_turnover)+log(to_turnover) | from_country))
-
-##
-# fixed effect with the plm library
-library(plm) # ! for panel data - we have no time here - country as individual, fua as realizations
-# see https://rstudio-pubs-static.s3.amazonaws.com/372492_3e05f38dd3f248e89cdedd317d603b9a.html#1_preliminaries
-d$fromto = paste0(d$from_country,d$to_country)
-plinks = plm::pdata.frame(d,index = c("fromto"))
-fixed <- plm(log(weight)~log(distance)+log(from_turnover)+log(to_turnover), data=plinks, model="within", effect="individual")
-summary(fixed)
-fixef(fixed)
-pFtest(fixed, ols)
-
-# export fixed effects for ABM
-dcult = - fixef(fixed)
-allcountries = unique(c(as.character(d$from_country),as.character(d$to_country)))
-origs=c();dests=c();dcults=c()
-for(ocountry in allcountries){
-  for(dcountry in allcountries){
-    dcults=append(dcults,dcult[paste0(ocountry,dcountry)])
-    origs=append(origs,ocountry);dests=append(dests,dcountry)
-  }
-}
-dcultdf = data.frame(from_country = origs,to_country=dests,distance=dcults)
-dcultdf$distance[is.na(dcultdf$distance)]=1000 # force no links for couples of countries where actually no link
-# country names as indices
-dcultdf$from_country=as.numeric(dcultdf$from_country) # actually 29 levels - ok
-dcultdf$to_country=as.numeric(dcultdf$to_country)
-write.table(dcultdf,file='model_nl6/setup/fixedeffects.csv',row.names = F,sep=";",quote = F)
-#dcultdf <- read.table(file='model_nl6/setup/fixedeffects.csv',sep=";",header=T)
-#dcultdf$distance[dcultdf$distance==1000]<-rep(NA,length(which(dcultdf$distance==1000))) # put NA again for summary stats
-#summary(as.numeric(dcultdf$distance))
-
-###
-# random effects?
-random <- plm(log(weight)~log(distance)+log(from_turnover)+log(to_turnover), data=plinks, model="random")
-summary(random)
-ranef(random)
-phtest(fixed, random)
-
-
-# -> links by sector ? NACE_origin, NACE_destination - aggregate at the level of broad sectors
 
 
 #####
