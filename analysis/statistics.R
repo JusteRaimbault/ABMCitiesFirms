@@ -127,7 +127,8 @@ dz$sim[dz$sim==0]=1e-8
 # taking log increases zeroinfl R2 from 0.15 to 0.16
 
 #zinflpoisson <- zeroinfl(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country, dist="poisson")
-zinflpoisson <- pscl::zeroinfl(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim) | 1, dist="poisson")
+zinflpoisson <- pscl::zeroinfl(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim) | 1,
+                               dist="poisson")
 summary(zinflpoisson)
 1 - sum((dz$intweight - fitted(zinflpoisson))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
 
