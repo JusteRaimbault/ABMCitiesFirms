@@ -4,7 +4,7 @@ setwd(paste0(Sys.getenv("CS_HOME"),'/UrbanDynamics/Models/ABMCitiesFirms'))
 library(sp)
 library(sf)
 library(dplyr)
-library(cartography)
+# library(cartography)
 library(ggplot2)
 
 source('analysis/functions.R')
@@ -29,14 +29,7 @@ countries <- st_read('Data/','countries')
 firms <- read.csv('Data/firms/amadeus_nodes.csv',sep=";",quote = "")
 firmlinks <- read.csv('Data/firms/amadeus_links.csv',sep=";",quote = "")
 
-dim(firms)
-# 3,053,540
-dim(firmlinks)
-# 1,866,936
-
 firmswithcoords = firms[!is.na(firms$lon)&!is.na(firms$lat),]
-dim(firmswithcoords)
-# 2,715,188
 
 rawfirmpoints = SpatialPointsDataFrame(coords = firmswithcoords[,c("lon","lat")],data = firmswithcoords,proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
 firmpoints <- st_transform(st_as_sf(rawfirmpoints),st_crs(fuas))
@@ -131,18 +124,6 @@ linkfuas$to_fua=as.character(linkfuas$to_fua)
 #save(firmpoints,firmfuas,firms_withfuas,linkfuas,file='Data/firms/amadeus_aggregFUA.RData')
 save(firmpoints,firmfuas,firms_withfuas,firms_withfuas_eu,linkfuas,file='Data/firms/amadeus_aggregGHSFUA.RData')
 #load(file='Data/firms/amadeus_aggregGHSFUA.RData')
-
-# where do links go ?
-length(which(linkfuas$from_country%in%eucountries_iso))
-length(which(linkfuas$to_country%in%eucountries_iso))
-length(which(linkfuas$from_country%in%eucountries_iso&linkfuas$to_country%in%eucountries_iso))
-# - country ownership matrix (cumulated in time)
-# - visualize inter-country flows: all world and EU
-
-# - TODO
-#length(which(!is.na(linkcountries$from_country)))
-#length(which(!is.na(linkcountries$to_country)))
-#length(which(!is.na(linkcountries$from_country)&!is.na(linkcountries$to_country)))
 
 
 
@@ -416,92 +397,9 @@ gradLinkTypoLayer(
 dev.off()
 
 
+# -> Network analysis in networkAnalysis.R
 
 
-
-#######
-## Network Analysis
-
-library(igraph)
-library(Matrix)
-library(reshape2)
-library(poweRlaw)
-
-g = graph_from_data_frame(aggrlinks,directed = T,vertices = saggrnodes[,1:30])
-V(g)$lon = (V(g)$X - min(V(g)$X)) / (max(V(g)$X) - min(V(g)$X))
-V(g)$lat = (V(g)$Y - min(V(g)$Y)) / (max(V(g)$Y) - min(V(g)$Y))
-write_graph(g,file='Results/EmpiricalNetwork/fua_graph.gml',format='gml')
-
-
-# Centralities 
-mean(degree(g))
-mean(strength(g))
-plot(log(1:length(V(g))),sort(log(strength(g)),decreasing = T))
-plot(log(1:length(V(g))),sort(log(strength(g,mode='in')),decreasing = T))
-plot(log(1:length(V(g))),sort(log(strength(g,mode='out')),decreasing = T))
-# roughly the same! balance in/out ?
-summary(strength(g,mode='in')/strength(g,mode='out'))
-
-# degree distribution (remove 2 zeros: fuas with no links)
-fitdeg = fitDistrPowerLaw(strength(g)[strength(g)>0],'Weighted degree',file='Results/EmpiricalNetwork/degreeDistr.png')
-#get_distance_statistic(fitdeg$powerlaw)
-#get_distance_statistic(fitdeg$ln)
-fitDistrPowerLaw(strength(g,mode='in')[strength(g,mode='in')>0],'Weighted in-degree',file='Results/EmpiricalNetwork/in-degreeDistr.png')
-fitDistrPowerLaw(strength(g,mode='out')[strength(g,mode='out')>0],'Weighted out-degree',file='Results/EmpiricalNetwork/out-degreeDistr.png')
-
-# edge weight distribution
-fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='Results/EmpiricalNetwork/edgeweight.png')
-
-# centrality distrib: bw? # ! makes not much sense in practice
-
-
-
-# Communities
-A = get.adjacency(g,sparse = T)
-g_undir = graph_from_adjacency_matrix(adjmatrix = (A+t(A))/2,weighted = T,mode = "undirected")
-
-set.seed(42)
-communities_clauset = cluster_fast_greedy(g_undir)
-set.seed(42)
-communities_louvain = cluster_louvain(g_undir) 
-# 0.35 modularity in both cases
-
-# directed mod
-directedmodularity(communities_clauset$membership,A) # 0.3521929
-directedmodularity(communities_louvain$membership,A) # 0.361524
-
-# countries mod
-directedmodularity(V(g)$fuacountry,A) # 0.3200182
-
-# null model with 30 random communities
-bnum=1000; mods = c()
-for(b in 1:bnum){
-  if(b%%100==0){show(b)}
-  mods=append(mods,directedmodularity(sample.int(30,size=length(V(g)),replace = T),A))
-}
-mean(mods);sd(mods)
-
-# max modularity?
-maxmodularity(communities_louvain$membership,A)
-
-# overlap between countries / communities
-
-
-###
-# Community map
-
-saggrnodes$Community = as.character(communities_louvain$membership)
-#saggrnodes$Population = saggrnodes$pop # issue with ghs - fua or pop - anyway plot with turnover
-saggrnodes$Turnover = saggrnodes$turnover
-comsizes = as.data.frame(table(communities_louvain$membership))
-keptcoms = as.character(comsizes[comsizes[,2]>5,1])
-saggrnodes$Community[!saggrnodes$Community%in%keptcoms]=NA
-
-map(data = saggrnodes,var = "Community", sizevar = "Turnover",
-    xlim=c(-10,30),ylim=c(35,62),
-    filename = 'Results/EmpiricalNetwork/map_communities_louvain.png',discrete = T,
-    width=22,height=18
-    )
 
 
 
