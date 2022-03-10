@@ -1,6 +1,8 @@
 
 #######
 ## Network Analysis
+#  -> modularities of countries, of NUTS
+#  -> Louvain communities
 
 setwd(paste0(Sys.getenv("CS_HOME"),'/UrbanDynamics/Models/ABMCitiesFirms'))
 
@@ -33,6 +35,10 @@ plot(log(1:length(V(g))),sort(log(strength(g,mode='out')),decreasing = T))
 # roughly the same! balance in/out ?
 summary(strength(g,mode='in')/strength(g,mode='out'))
 
+# Metropolisation
+cor.test(strength(g), V(g)$gdp)
+cor.test(strength(g), V(g)$turnover)
+
 # degree distribution (remove 2 zeros: fuas with no links)
 fitdeg = fitDistrPowerLaw(strength(g)[strength(g)>0],'Weighted degree',file='Results/EmpiricalNetwork/degreeDistr.png')
 #get_distance_statistic(fitdeg$powerlaw)
@@ -61,7 +67,7 @@ communities_louvain = cluster_louvain(g_undir)
 directedmodularity(communities_clauset$membership,A) # 0.3521929
 directedmodularity(communities_louvain$membership,A) # 0.361524
 
-# countries mod
+# countries mod = internationalisation
 directedmodularity(V(g)$fuacountry,A) # 0.3200182
 
 # null model with 30 random communities
