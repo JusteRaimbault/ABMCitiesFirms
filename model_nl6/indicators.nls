@@ -195,8 +195,8 @@ to-report indicators:internationalization
 end
 
 ;;
-; metropolization as deviation from expected flows as function of size only
-to-report indicators:metropolization
+; deviation from expected flows as function of size only
+to-report indicators:deviation-expected-flows
   let orderedcities sort-on [cities:number] cities
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
@@ -335,6 +335,18 @@ to-report indicators:correlation-degree-size
   let sizes map [? -> [ln city:gdp] of ?] orderedcities
   report utils:statistics:pearson-correlation-ci degrees sizes
 end
+
+
+;;
+; correlation weighted degree - size = metropolisation
+;  done on logs
+to-report indicators:metropolisation
+  let orderedcities sort-on [cities:number] cities
+  let wdegrees map [? -> genlog ([sum [link:volume] of firmlink-neighbors] of ?)] orderedcities
+  let sizes map [? -> [ln city:gdp] of ?] orderedcities
+  report item 0 (utils:statistics:pearson-correlation-ci wdegrees sizes)
+end
+
 
 
 ;;

@@ -204,6 +204,24 @@ for(countryGravityDecay in unique(res$countryGravityDecay)){
 }
 
 
+## aggreg point closest to macro indicators internationalisation/metropolisation
+sres$errorInternationalisation = abs(sres$internationalization - 0.32)
+sres$errorMetropolisation = abs(sres$rhoDegreeSize - 0.96)
+
+nrow(sres[sres$errorInternationalisation<0.2&sres$errorMetropolisation<0.2,]) # 231 / 6534
+summary(sres$errorInternationalisation) # min = 0.0001737
+summary(sres$errorMetropolisation) # min = 0.06491
+
+g=ggplot(sres[sres$errorInternationalisation<0.2&sres$errorMetropolisation<0.2,],aes(x=errorInternationalisation,y=errorMetropolisation,color=gravityDecay))
+g+geom_point(alpha=0.5)
+
+sres$relErrorInternationalisation = abs(sres$internationalization - 0.32)/0.32
+sres$relErrorMetropolisation = abs(sres$rhoDegreeSize - 0.96)/0.96
+g=ggplot(sres[sres$relErrorInternationalisation<0.05&sres$errorMetropolisation<0.12,],aes(x=relErrorInternationalisation,y=relErrorMetropolisation,color=gravityDecay))
+g+geom_point(alpha=0.5)
+
+nrow(sres[sres$relErrorInternationalisation<0.05&sres$errorMetropolisation<0.12,])
+
 
 ##### hierarchy experiment
 
