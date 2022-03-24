@@ -161,7 +161,8 @@ sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLink
   rhoFlowDistanceSd=sd(rhoFlowDistance),
   rhoFlowDistance = mean(rhoFlowDistance),
   networkDegreeHierarchyAlphaSd = sd(networkDegreeHierarchyAlpha),
-  networkDegreeHierarchyAlpha = mean(networkDegreeHierarchyAlpha)
+  networkDegreeHierarchyAlpha = mean(networkDegreeHierarchyAlpha),
+  count=n()
 )
 
 

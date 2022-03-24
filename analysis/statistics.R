@@ -135,6 +135,7 @@ summary(zinflpoisson)
 zinflpoisson2 <- pscl::zeroinfl(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim), dist="poisson")
 summary(zinflpoisson2)
 1 - sum((dz$intweight - fitted(zinflpoisson2))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
+mean((dz$intweight-zinflpoisson2$fitted)^2)
 
 # taking a zero link poisson instead of binomial sligthly increases R2 but negligible
 hurdle1 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)|1,
