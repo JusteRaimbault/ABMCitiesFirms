@@ -148,6 +148,8 @@ hurdle2 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+lo
 summary(hurdle2)
 1 - sum((dz$intweight - fitted(hurdle2))^2) / sum((dz$intweight - mean(dz$intweight) )^2)
 
+mean((dz$intweight-hurdle2$fitted)^2)
+AIC(hurdle2)
 
 # with country fixed effects? -> pb solving, singular
 hurdle3 <- pscl::hurdle(data = dz, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country,

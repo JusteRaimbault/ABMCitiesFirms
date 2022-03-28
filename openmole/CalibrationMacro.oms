@@ -1,0 +1,58 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+val finalTime = Val[Double]
+
+val gammaOrigin = Val[Double]
+val gammaDestination = Val[Double]
+val gammaLinks = Val[Double]
+val gammaSectors = Val[Double]
+val gravityDecay = Val[Double]
+val countryGravityDecay = Val[Double]
+
+// indicators
+val errorInternationalisation = Val[Double]
+val errorMetropolisation = Val[Double]
+
+val replication = Val[Int]
+
+val cmds = Seq("experiments:setup-experiment \"real\" 1.0 21 \"log-normal\" ${finalTime} "+
+  "${gammaOrigin} ${gammaDestination} ${gammaLinks} ${gammaSectors} ${gravityDecay} ${countryGravityDecay} ${replication}"
+,"experiments:run-experiment")
+
+val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
+    inputs += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
+      gravityDecay,countryGravityDecay,replication),
+    outputs += errorInternationalisation mapped "abs (indicators:internationalization - 0.32) ",
+    outputs += errorMetropolisation mapped "abs (indicators:metropolization - 0.96)"//,
+    //countryGravityDecay := 0.0//,
+    //finalTime := 500
+)
+
+//val purpose = "CALIBRATION_NOCOUNTRY_GRID"
+val purpose = "CALIBRATION_MACRO_GRID"
+//val purpose = "CALIBRATION_TEST"
+val datestr = (new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()).toString
+val resdir = purpose+"_"+datestr
+
+val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
+//val env = LocalEnvironment(5)
+
+NSGA2Evolution(
+    genome = Seq(
+        gravityDecay in (0.0,10000.0),
+        countryGravityDecay in (0.0,200.0),
+        gammaSectors in (0.0,20.0),
+        gammaLinks in (0.0,20.0),
+        gammaOrigin in (0.0,20.0),
+        gammaDestination in (0.0,20.0),
+        finalTime in (100.0, 10000.0)
+      ),
+      populationSize = 200,
+      objective = Seq(errorMetropolisation,errorInternationalisation),
+      evaluation = model,
+      stochastic = Stochastic(seed = replication),
+      termination = 100000,
+      parallelism = 1000
+) by Island(30 minutes) hook (workDirectory / "calibration" / resdir,1000) on env
+

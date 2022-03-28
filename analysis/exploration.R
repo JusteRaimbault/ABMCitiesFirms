@@ -1,5 +1,5 @@
 
-setwd(paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration'))
+setwd(paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/openmole'))
 
 library(dplyr)
 library(ggplot2)
@@ -140,12 +140,17 @@ summary(sharpes)
 ## Grid plots
 
 
-resPrefix = '20190925_134404_DIRECTSAMPLING_SYNTHETIC_GRID'
-resdir = paste0(resPrefix,'/')
-res<-loadData(resPrefix)
+#resPrefix = '20190925_134404_DIRECTSAMPLING_SYNTHETIC_GRID'
+resPrefix = '20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID'
+resdir = paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration/',resPrefix,'/')
+dir.create(resdir,recursive = T)
+res<-loadData(resPrefix,resdir = 'exploration/',addSepInName='.')
 
+# missing param point? for 20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID
+#missid = sort(unique(res$id))-seq(from=min(res$id),to=max(res$id),by=1)
+#which(missid<0);length(unique(res$id));max(res$id) # -> just missing one repet
 
-sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
+sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarise(
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization),
   metropolizationSd = sd(metropolization),
@@ -165,6 +170,9 @@ sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLink
   count=n()
 )
 
+# for 20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID
+# sres$count[sres$count < 20] = 18 14 19  9 # ok, miss 11 at most -> no need to re-run
+
 
 for(countryGravityDecay in unique(res$countryGravityDecay)){
   for(gammaDestination in unique(res$gammaDestination)){
@@ -178,15 +186,15 @@ for(indicator in indicators){
   }
 }
 
-# same but fixed gammaLinks (close to no effect -> need to change that process)
-# or can we do a large number enough of simulations to see a significant effect ? -> interesting exercize !
+# same but fixed gammaLinks (role of that process: ?)
 
 #sres$gammaOriginString = sapply(sres$gammaOrigin,function(s){expression(gamma[F]*"="*s)})
 sres$gammaOriginString = paste0('gamma[O]*"="*',sres$gammaOrigin)
 
 ylabs = indicators;names(ylabs)<-indicators
 ylabs[["internationalization"]] = "Internationalisation"
-ylabs[["rhoDegreeSize"]] = "Metropolisation"
+#ylabs[["rhoDegreeSize"]] = "Metropolisation" # for older file with non weighted degree
+ylabs[["metropolization"]] = "Metropolisation"
 ylabs[["networkAvgCommunitySize"]] = "Average community size"
 
 for(countryGravityDecay in unique(res$countryGravityDecay)){
@@ -207,21 +215,21 @@ for(countryGravityDecay in unique(res$countryGravityDecay)){
 
 ## aggreg point closest to macro indicators internationalisation/metropolisation
 sres$errorInternationalisation = abs(sres$internationalization - 0.32)
-sres$errorMetropolisation = abs(sres$rhoDegreeSize - 0.96)
+sres$errorMetropolisation = abs(sres$metropolization - 0.96)
 
-nrow(sres[sres$errorInternationalisation<0.2&sres$errorMetropolisation<0.2,]) # 231 / 6534
+nrow(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,]) # 67 / 6534
 summary(sres$errorInternationalisation) # min = 0.0001737
 summary(sres$errorMetropolisation) # min = 0.06491
 
-g=ggplot(sres[sres$errorInternationalisation<0.2&sres$errorMetropolisation<0.2,],aes(x=errorInternationalisation,y=errorMetropolisation,color=gravityDecay))
+g=ggplot(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,],aes(x=errorInternationalisation,y=errorMetropolisation,color=gravityDecay))
 g+geom_point(alpha=0.5)
 
 sres$relErrorInternationalisation = abs(sres$internationalization - 0.32)/0.32
-sres$relErrorMetropolisation = abs(sres$rhoDegreeSize - 0.96)/0.96
-g=ggplot(sres[sres$relErrorInternationalisation<0.05&sres$errorMetropolisation<0.12,],aes(x=relErrorInternationalisation,y=relErrorMetropolisation,color=gravityDecay))
+sres$relErrorMetropolisation = abs(sres$metropolization - 0.96)/0.96
+g=ggplot(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,],aes(x=relErrorInternationalisation,y=relErrorMetropolisation,color=gravityDecay))
 g+geom_point(alpha=0.5)
 
-nrow(sres[sres$relErrorInternationalisation<0.05&sres$errorMetropolisation<0.12,])
+nrow(sres[sres$relErrorInternationalisation<0.1&sres$errorMetropolisation<0.1,])
 
 
 ##### hierarchy experiment

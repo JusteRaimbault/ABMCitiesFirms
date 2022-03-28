@@ -1,0 +1,10 @@
+
+24/03/2022 18:14:50 ; 20 running ; 934263/934283 ; 87:50:40 ; running
+
+model running 20, completed 130660/130680
+
+EGIEnvironment 2y0m12d0h ; up 414.65M ; down 11.37G ; running 4 ; finished 33547 ; failed 1727 ; errors 200
+local finished 803603
+
+-- 11h07 28/03 -> stop (stalled 20 remaining, finish on local)
+
