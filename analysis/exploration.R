@@ -38,10 +38,14 @@ nominals = list("gravityDecay"=500,"countryGravityDecay"=500,"gammaSectors"=1,"g
 #####
 # one factor plots
 
-resPrefix = '20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
-resdir = paste0(resPrefix,'/')
+#resPrefix = '20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
+resPrefix = '20220328_140001_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
+resdir = paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration/',resPrefix,'/')
+dir.create(resdir,recursive = T)
+res<-loadData(resPrefix,resdir = 'exploration/',addSepInName='.')
 
-res <- loadData(resPrefix,sep='\t')
+# for 20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID
+#res <- loadData(resPrefix,sep='\t')
 
 #onefactorParamIndex = 1
 #onefactorParamIndex = 4 # links : path dependency ? bof
@@ -70,8 +74,8 @@ for(param in parameters[-onefactorParamIndex]){rows=rows&res[,param]==nominals[[
 
 # gravity decay
 sres = res[rows,] %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
-  rhoDegreeSizeSd = sd(rhoDegreeSize),
-  rhoDegreeSize = mean(rhoDegreeSize), 
+  metropolizationSd = sd(metropolization),
+  metropolization = mean(metropolization), 
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization)
 )
@@ -82,8 +86,10 @@ g+geom_point()+geom_line()+geom_errorbar(aes(ymin=internationalization-internati
 ggsave(file=paste0(resdir,'internationalisation-gravityDecay_errorbars.png'),width=18,height=15,units='cm')
 
 # note: metropolisation in the paper is correlation degree/size (not metropolization in the sim files/nl model)
-g=ggplot(sres,aes(x=gravityDecay,y=rhoDegreeSize))
-g+geom_point()+geom_line()+geom_errorbar(aes(ymin=rhoDegreeSize-rhoDegreeSizeSd,ymax=rhoDegreeSize+rhoDegreeSizeSd))+
+# 20220330: indic name in netlogo has been corrected, metroploization is indeed corr weighted degree/size
+#g=ggplot(sres,aes(x=gravityDecay,y=rhoDegreeSize))
+g=ggplot(sres,aes(x=gravityDecay,y=metropolization))
+g+geom_point()+geom_line()+geom_errorbar(aes(ymin=metropolization-metropolizationSd,ymax=metropolization+metropolizationSd))+
   xlab(expression(d[0]))+ylab('Metropolisation')+stdtheme
 ggsave(file=paste0(resdir,'metropolisation-gravityDecay_errorbars.png'),width=18,height=15,units='cm')
 
@@ -99,8 +105,8 @@ for(param in parameters[-onefactorParamIndex]){rows=rows&res[,param]==nominals[[
 res$gammaSectors = round(res$gammaSectors,digits = 3)
 
 sres = res[rows,] %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
-  rhoDegreeSizeSd = sd(rhoDegreeSize),
-  rhoDegreeSize = mean(rhoDegreeSize), 
+  metropolizationSd = sd(metropolization),
+  metropolization = mean(metropolization), 
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization)
 )
@@ -110,8 +116,8 @@ g+geom_point()+geom_line()+geom_errorbar(aes(ymin=internationalization-internati
   xlab(expression(gamma[S]))+ylab('Internationalisation')+stdtheme
 ggsave(file=paste0(resdir,'internationalisation-gammaSectors_errorbars.png'),width=18,height=15,units='cm')
 
-g=ggplot(sres,aes(x=gammaSectors,y=rhoDegreeSize))
-g+geom_point()+geom_line()+geom_errorbar(aes(ymin=rhoDegreeSize-rhoDegreeSizeSd,ymax=rhoDegreeSize+rhoDegreeSizeSd),width=0.05)+
+g=ggplot(sres,aes(x=gammaSectors,y=metropolization))
+g+geom_point()+geom_line()+geom_errorbar(aes(ymin=metropolization-metropolizationSd,ymax=metropolization+metropolizationSd),width=0.05)+
   xlab(expression(gamma[S]))+ylab('Metropolisation')+stdtheme
 ggsave(file=paste0(resdir,'metropolisation-gammaSectors_errorbars.png'),width=18,height=15,units='cm')
 
