@@ -7,7 +7,8 @@ load('Data/firms/amadeus_stataggrlinks.RData')
 
 
 d = stataggrlinks[stataggrlinks$distance>0&stataggrlinks$weight>0&stataggrlinks$from_turnover>0&stataggrlinks$to_turnover>0,]
-
+# write.csv(as_tibble(d),file=paste0(Sys.getenv("CS_HOME"),'/Teaching/2022-AnalyseSpatiale/rawdata/firmsnetwork/links.csv'))
+#
 
 ## Statistical models
 # Model 1: OLS - distance only
@@ -93,7 +94,7 @@ mean((log(d$intweight)-log(poisson2$fitted))^2)
 #https://en.wikipedia.org/wiki/Zero-inflated_model https://cran.r-project.org/web/packages/pscl/pscl.pdf
 
 library(pscl)
-library(bit64)
+#library(bit64)
 source('analysis/functions.R')
 
 load('Data/firms/amadeus_aggregnw.RData')
@@ -117,6 +118,10 @@ d = bind_rows(d,as.tbl(dmiss[,names(d)]))
 #d$intweight = as.integer64(floor(d$weight))
 d$intweight = round(d$weight/10000)
 #d$intweight = round(ifelse(d$weight==0,0,log(d$weight)))
+
+#write.csv(d,file=paste0(Sys.getenv("CS_HOME"),'/Teaching/2022-AnalyseSpatiale/rawdata/firmsnetwork/links-with-zeros.csv')) # ! 34Mo! -> add by hand if needed
+# write.csv(as_tibble(saggrnodes)[-ncol(saggrnodes)],file=paste0(Sys.getenv("CS_HOME"),'/Teaching/2022-AnalyseSpatiale/rawdata/firmsnetwork/cities.csv'))
+
 
 #zinflpoisson <- zeroinfl_64(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+log(sim)+from_country+to_country, dist="poisson")
 zinflpoisson <- zeroinfl(data = d, intweight~log(distance)+log(from_turnover)+log(to_turnover)+sim, dist="poisson")
