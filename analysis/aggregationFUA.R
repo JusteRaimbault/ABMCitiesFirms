@@ -4,7 +4,7 @@ setwd(paste0(Sys.getenv("CS_HOME"),'/UrbanDynamics/Models/ABMCitiesFirms'))
 library(sp)
 library(sf)
 library(dplyr)
-library(cartography)
+# library(cartography)
 library(ggplot2)
 
 source('analysis/functions.R')
@@ -14,29 +14,16 @@ source('analysis/functions.R')
 # 1) FUA / links overlay
 #
 
-#fuas <- st_read('Data/UI-boundaries-FUA/','FUA_Boundaries')
+
 fuas <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.gpkg'))
-#fuas <- st_transform(fuas,CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) # NO - transform the points to fuas
 
 ucdb <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/JRC_EC/GHS/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_0.shp'))
 ucdb <- st_transform(ucdb,st_crs(fuas))
 
-countries <- st_read('Data/','countries')
-#countries <- st_read(paste0(Sys.getenv('CS_HOME'),'/Data/Countries/'),'countries') # same
-
-#countries <- st_transform(countries,st_crs(fuas)) #makes no sense at this scale
-
 firms <- read.csv('Data/firms/amadeus_nodes.csv',sep=";",quote = "")
 firmlinks <- read.csv('Data/firms/amadeus_links.csv',sep=";",quote = "")
 
-dim(firms)
-# 3,053,540
-dim(firmlinks)
-# 1,866,936
-
 firmswithcoords = firms[!is.na(firms$lon)&!is.na(firms$lat),]
-dim(firmswithcoords)
-# 2,715,188
 
 rawfirmpoints = SpatialPointsDataFrame(coords = firmswithcoords[,c("lon","lat")],data = firmswithcoords,proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
 firmpoints <- st_transform(st_as_sf(rawfirmpoints),st_crs(fuas))
@@ -47,32 +34,8 @@ firmfuas = st_join(firmpoints,fuas,join=st_within)
 # overlay ucdb with fuas for pop/gdp properties
 ucdbfuas = st_join(ucdb,fuas,join=st_within)
 
-
-
 # Filter 
-#firms_withfuas <- firmfuas %>% filter(!is.na(FUA_CODE))
 firms_withfuas <- firmfuas %>% filter(!is.na(eFUA_ID))
-# 2,036,272 with GHS FUA
-
-
-# overlay with Europe countries
-#countriesEurope = st_transform(countries,st_crs(fuas))
-#firmcountries = st_join(firmpoints,countriesEurope,join=st_within)
-# proportion of firms within Europe
-#100*length(which(is.na(firmcountries$CNTR_ID)))/nrow(firmcountries)
-#length(which(!is.na(firmcountries$CNTR_ID)))
-# remove Switzerland and Norway and other non EU countries
-#100*length(which(is.na(firmcountries$CNTR_ID)|as.character(firmcountries$CNTR_ID)%in%c("NO")))/nrow(firmcountries)
-#eucountries = c(
-#  "UK","DE","FR","NL","IT","LU","ES","AT","BE","FI",
-#  "PL","DK","PT","HU","RO","CZ","LV","LT","SK","EL",
-#  "IE","BG","SE","EE","SI","HR")
-#100*length(which(as.character(firmcountries$CNTR_ID)%in%eucountries))/nrow(firmcountries)
-# 97.71 %
-#firmseu = firmswithcoords[as.character(firmcountries$CNTR_ID)%in%c("UK","DE","FR","NL","IT","LU","ES","AT","BE","FI","PL","DK","PT","HU","RO","CZ","LV","LT","SK","EL","IE","BG","SE","EE","SI","HR"),]
-#firmseuid = unique(as.character(firmseu$id))
-#100*length(which(firmlinks$from%in%firmseuid&firmlinks$to%in%firmseuid))/nrow(firmlinks)
-# only 40.69% of within EU links
 
 eucountries_iso = c(
     "GBR","JEY", # must add Jersey - keep UK
@@ -87,35 +50,20 @@ eucountries_iso = c(
     "HRV","MLT","SWE") #Croatie Malte Suède
 # + North Cyprus - not taken into account
 
-# firms within EU
-nrow(firmfuas %>% filter(Cntry_ISO%in%eucountries_iso))
-# 2,033,799
-
 firms_withfuas_eu <- firms_withfuas %>% filter(Cntry_ISO%in%eucountries_iso)
-nrow(firms_withfuas_eu)
-# 2,033,799
 
 
 # firms in fua with are connected to a link
 linkids = unique(c(as.character(firmlinks$from),as.character(firmlinks$to)))
-length(which(firms_withfuas_eu$id%in%linkids))
 
-# firms in fua with turnover and a link
-length(which(firms_withfuas$id%in%linkids&!is.na(firms_withfuas$turnover)))
 
 # join fuaids to firmlinks -> ! ~ 1000 companies are repeated - should already filter by year?
-# FIXME should be a semi_join ? - or filter firms table before - which info to keep? the closest in time to the link ?
+#  ! should be a semi_join ? - or filter firms table before - which info to keep? the closest in time to the link ?
 #  -> nested join and summarize
 linkfuas = left_join(firmlinks,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo','Cntry_ISO')],by=c('from'='id'))
 names(linkfuas)[6:9]<-c("from_fua","from_turnover","from_year","from_country")
-length(which(!is.na(linkfuas$from_fua))) # 652258
-length(which(!is.na(linkfuas$from_fua)))/nrow(linkfuas) # 32.99 % = 652258 between fuas
-# join for to_fuas
 linkfuas = left_join(linkfuas,firms_withfuas_eu[,c('id','eFUA_ID','turnover','latestinfo','Cntry_ISO')],by=c('to'='id'))
 names(linkfuas)[11:14] <- c('to_fua',"to_turnover","to_year","to_country")
-length(which(!is.na(linkfuas$to_fua)))
-
-length(which(!is.na(linkfuas$to_fua)&!is.na(linkfuas$from_fua)))
 
 # year of link observation
 linkfuas$year = substring(linkfuas$date,4,7)
@@ -132,59 +80,20 @@ linkfuas$to_fua=as.character(linkfuas$to_fua)
 save(firmpoints,firmfuas,firms_withfuas,firms_withfuas_eu,linkfuas,file='Data/firms/amadeus_aggregGHSFUA.RData')
 #load(file='Data/firms/amadeus_aggregGHSFUA.RData')
 
-# where do links go ?
-length(which(linkfuas$from_country%in%eucountries_iso))
-length(which(linkfuas$to_country%in%eucountries_iso))
-length(which(linkfuas$from_country%in%eucountries_iso&linkfuas$to_country%in%eucountries_iso))
-# - country ownership matrix (cumulated in time)
-# - visualize inter-country flows: all world and EU
-
-# - TODO
-#length(which(!is.na(linkcountries$from_country)))
-#length(which(!is.na(linkcountries$to_country)))
-#length(which(!is.na(linkcountries$from_country)&!is.na(linkcountries$to_country)))
 
 
 
-####
 # filter links between fuas # -> remains 555196
-length(which(!is.na(linkfuas$from_fua)))
-length(which(!is.na(linkfuas$to_fua)))
-
 links = linkfuas[!is.na(linkfuas$from_fua)&!is.na(linkfuas$to_fua),]
 # with turnover at destination and proportion of ownership # remains 161303
-length(which(!is.na(links$to_turnover)&!is.na(links$proportion)))
 links = links[!is.na(links$to_turnover)&!is.na(links$proportion),]
 
 
-####
-# ! not needed, as year link info is crap
-# links can be aggregated by o-d and year
-#aggrlinksyear <- linkfuas %>% group_by(from_fua,to_fua,year,.drop=T) %>% summarize(weight = sum(proportion*to_turnover))
-#summary(aggrlinks[aggrlinks$year=="2018",])
-#aggrlinksyear = aggrlinksyear[!is.na(aggrlinksyear$from_fua)&!is.na(aggrlinksyear$to_fua)&!is.na(aggrlinksyear$year)&!is.na(aggrlinksyear$weight),]
-#aggrlinksyear$dummy=rep("link",nrow(aggrlinksyear))
 
 
-####
-# UK Statistics
-length(which(firms$country=='GB')) # 463731
-length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$eFUA_ID))) # 413740
-length(which(firmfuas$Cntry_ISO=='GBR'&firmfuas$id%in%linkids)) # 336804
-length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$turnover))) #78273
-length(which(firmfuas$Cntry_ISO=='GBR'&!is.na(firmfuas$turnover)&firmfuas$id%in%linkids)) # 68273
-
-length(which(linkfuas$from_country=='GBR')) # 128066
-length(which(linkfuas$to_country=='GBR')) # 293820
-length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR')) # 116661
-length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR'&!is.na(linkfuas$from_fua)&!is.na(linkfuas$to_fua))) # 116661
-length(which(linkfuas$from_country=='GBR'&linkfuas$to_country=='GBR'&!is.na(linkfuas$to_turnover)&!is.na(linkfuas$proportion))) # 12480
-# same, as country is obtained through fua -> need an other join
+# for all links: country is obtained through fua -> need an other join
 linkall = left_join(firmlinks,firms[,c('id','country')],by=c('from'='id'))
 linkall = left_join(linkall,firms[,c('id','country')],by=c('to'='id'))
-length(which(linkall$country.x=='GB')) # 142975
-length(which(linkall$country.y=='GB')) # 323618
-length(which(linkall$country.x=='GB'&linkall$country.y=='GB')) #131819
 
 # exports for UK
 names(linkall)[6:7]=c('from_country','to_country')
@@ -231,23 +140,14 @@ aggrlinks <- links %>% filter(to_turnover>0) %>% group_by(from_fua,to_fua) %>% s
 fuas$eFUA_ID=as.character(fuas$eFUA_ID)
 aggrlinkscountries = left_join(aggrlinks,fuas[,c('eFUA_ID','Cntry_ISO')],by=c('from_fua'='eFUA_ID'))
 aggrlinkscountries = left_join(aggrlinkscountries,fuas[,c('eFUA_ID','Cntry_ISO')],by=c('to_fua'='eFUA_ID'))
-length(which(aggrlinkscountries$Cntry_ISO.x=="GBR")) # 1524
-length(which(aggrlinkscountries$Cntry_ISO.y=="GBR")) # 1541
-length(which(aggrlinkscountries$Cntry_ISO.y=="GBR"&aggrlinkscountries$Cntry_ISO.x=="GBR"))
 
-# year repartition is shitty
-#table(links$year)
-#length(which(duplicated(links[,c("from","to")]))) # too few replicated links to have double observations
-# -> dynamical info can not really be used ?
-# -> fit the model from empty network ('stationary state') ?
 
 
 
 ######
-# network analysis
-#  -> modularities of countries, of NUTS
-#  -> Louvain communities
-#timeaggrlinks = aggrlinks
+# network construction
+
+
 
 # unique(floor(as.numeric(as.character(firms_withfuas_eu$nacecode))/1000))
 # ! NO first digit does not mean anything: either first level (letter), or two first digits
@@ -306,28 +206,8 @@ aggrnodes = left_join(aggrnodes,coords,by=c('eFUA_ID'='fuaid'))
 names(aggrnodes)[1]='fua'
 aggrnodes$fua = as.character(aggrnodes$fua)
 
-# bug in aggreg? ! all fuas should have sectors summing to 1 as all companies have nace digits!
-#aggrnodes[rowSums(aggrnodes[,3:12])==0,]
-#faggr = firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42,]
-#firms_withfuas_eu[firms_withfuas_eu$eFUA_ID==42&firms_withfuas_eu$nace_firstdigit==4,]
 
 sectornames = paste0('sector',unique(firms_withfuas_eu$nace_firstdigit[!is.na(firms_withfuas_eu$nace_firstdigit)]))
-##
-# histograms (clustered) of sector profiles
-km = kmeans(aggrnodes[,sectornames],centers = 5,nstart = 100)
-aggrnodes$cluster = km$cluster
-clustsizes = aggrnodes%>% group_by(cluster) %>% summarize(turnover=mean(turnover))
-lcentroids = data.frame()
-for(k in sectornames){lcentroids=rbind(lcentroids,data.frame(prop=km$centers[,k],sector=rep(k,nrow(km$centers)),centre=1:nrow(km$centers),size=clustsizes$turnover))}
-g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=as.character(centre),group=as.character(centre)))
-g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
-ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5.png',width=20,height=18,units='cm')
-
-g=ggplot(lcentroids,aes(x=as.character(sector),y=prop,color=log(size),group=as.character(centre)))
-g+geom_line()#+stat_smooth(method = 'loess',span = 0.5)
-ggsave(file='Results/EmpiricalNetwork/sectordistrib_clusters5_colorMeanTurnover.png',width=20,height=18,units='cm')
-# ! -> largest city have the sctor 9 profile - slightly smallest flat to the right, smaller peaks
-# -> heuristic for synthetic sectors ~ relevant !
 
 
 ####
@@ -383,125 +263,10 @@ saggrnodes = left_join(aggrnodes,sucdb,by=c('fua'='eFUA_ID'))
 save(sucdb,saggrnodes, file='Data/firms/amadeus_saggregnw.RData')
 #load('Data/firms/amadeus_saggregnw.RData')
 
-cor.test(saggrnodes$turnover,saggrnodes$pop,method='pearson')
-cor.test(saggrnodes$turnover,saggrnodes$pop,method='spearman')
 
-cor.test(saggrnodes$turnover,saggrnodes$gdp,method='pearson')
-cor.test(saggrnodes$turnover,saggrnodes$gdp,method='spearman')
+# -> summary stats in summaryStats.R
+# -> Network analysis in networkAnalysis.R
 
-
-######
-##  try basic flow map
-currentlinks = aggrlinks[aggrlinks$weight>quantile(aggrlinks$weight,c(0.97)),]
-linkLayer <- getLinkLayer(x=fuas,xid='FUA_CODE',df=currentlinks,dfid = c("from_fua","to_fua"))
-#osm <- getTiles(x = countries, type = "osm", zoom = 11, crop = TRUE)
-#tilesLayer(x = osm)
-#plot(fuas)
-png(filename = 'Results/EmpiricalNetwork/fua_flows.png',width = 20, height = 18, units = "cm",res=300)
-
-plot(st_centroid(st_geometry(fuas)))#, col = NA, border = "grey", add=TRUE)
-gradLinkTypoLayer(
-  x = linkLayer,
-  xid=c("from_fua","to_fua"),
-  df = currentlinks,
-  dfid=c("from_fua","to_fua"),
-  var = "weight",
-  breaks = c(min(currentlinks$weight),quantile(currentlinks$weight,c(0.25)), median(currentlinks$weight), quantile(currentlinks$weight,c(0.995)), quantile(currentlinks$weight,c(0.9995))),
-  #lwd = c(1,2,5,10)/2#,
-  var2 = "dummy"
-)
-#layoutLayer(title = paste0("Ownership links"),
-#            frame = FALSE, col = "grey25", coltitle = "white",
-#            tabtitle = TRUE)
-dev.off()
-
-
-
-
-
-#######
-## Network Analysis
-
-library(igraph)
-library(Matrix)
-library(reshape2)
-library(poweRlaw)
-
-g = graph_from_data_frame(aggrlinks,directed = T,vertices = saggrnodes[,1:30])
-V(g)$lon = (V(g)$X - min(V(g)$X)) / (max(V(g)$X) - min(V(g)$X))
-V(g)$lat = (V(g)$Y - min(V(g)$Y)) / (max(V(g)$Y) - min(V(g)$Y))
-write_graph(g,file='Results/EmpiricalNetwork/fua_graph.gml',format='gml')
-
-
-# Centralities 
-mean(degree(g))
-mean(strength(g))
-plot(log(1:length(V(g))),sort(log(strength(g)),decreasing = T))
-plot(log(1:length(V(g))),sort(log(strength(g,mode='in')),decreasing = T))
-plot(log(1:length(V(g))),sort(log(strength(g,mode='out')),decreasing = T))
-# roughly the same! balance in/out ?
-summary(strength(g,mode='in')/strength(g,mode='out'))
-
-# degree distribution (remove 2 zeros: fuas with no links)
-fitdeg = fitDistrPowerLaw(strength(g)[strength(g)>0],'Weighted degree',file='Results/EmpiricalNetwork/degreeDistr.png')
-#get_distance_statistic(fitdeg$powerlaw)
-#get_distance_statistic(fitdeg$ln)
-fitDistrPowerLaw(strength(g,mode='in')[strength(g,mode='in')>0],'Weighted in-degree',file='Results/EmpiricalNetwork/in-degreeDistr.png')
-fitDistrPowerLaw(strength(g,mode='out')[strength(g,mode='out')>0],'Weighted out-degree',file='Results/EmpiricalNetwork/out-degreeDistr.png')
-
-# edge weight distribution
-fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='Results/EmpiricalNetwork/edgeweight.png')
-
-# centrality distrib: bw? # ! makes not much sense in practice
-
-
-
-# Communities
-A = get.adjacency(g,sparse = T)
-g_undir = graph_from_adjacency_matrix(adjmatrix = (A+t(A))/2,weighted = T,mode = "undirected")
-
-set.seed(42)
-communities_clauset = cluster_fast_greedy(g_undir)
-set.seed(42)
-communities_louvain = cluster_louvain(g_undir) 
-# 0.35 modularity in both cases
-
-# directed mod
-directedmodularity(communities_clauset$membership,A) # 0.3521929
-directedmodularity(communities_louvain$membership,A) # 0.361524
-
-# countries mod
-directedmodularity(V(g)$fuacountry,A) # 0.3200182
-
-# null model with 30 random communities
-bnum=1000; mods = c()
-for(b in 1:bnum){
-  if(b%%100==0){show(b)}
-  mods=append(mods,directedmodularity(sample.int(30,size=length(V(g)),replace = T),A))
-}
-mean(mods);sd(mods)
-
-# max modularity?
-maxmodularity(communities_louvain$membership,A)
-
-# overlap between countries / communities
-
-
-###
-# Community map
-
-saggrnodes$Community = as.character(communities_louvain$membership)
-#saggrnodes$Population = saggrnodes$pop # issue with ghs - fua or pop - anyway plot with turnover
-saggrnodes$Turnover = saggrnodes$turnover
-comsizes = as.data.frame(table(communities_louvain$membership))
-keptcoms = as.character(comsizes[comsizes[,2]>5,1])
-saggrnodes$Community[!saggrnodes$Community%in%keptcoms]=NA
-
-map(data = saggrnodes,var = "Community", sizevar = "Turnover",
-    xlim=c(-10,30),ylim=c(35,62),
-    filename = 'Results/EmpiricalNetwork/map_communities_louvain.png',discrete = T,
-    width=22,height=18
-    )
 
 
 

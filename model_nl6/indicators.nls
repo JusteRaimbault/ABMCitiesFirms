@@ -18,7 +18,7 @@ to indicators:compute-indicators
   
   ; geographical indicators
   show (word "internationalization = " indicators:internationalization)
-  show (word "metropolization = " indicators:metropolization)
+  show (word "metropolization = " indicators:metropolisation)
   show (word "regionalization = " indicators:regionalization 10)
   show (word "specialization = " indicators:specialization 10)
   
@@ -47,7 +47,7 @@ to indicators:store-ts-indics
   indicators:setup-network-indicators
   
   ifelse table:has-key? indicators:temporal-data "internationalization" [table:put indicators:temporal-data "internationalization" (lput indicators:internationalization (table:get indicators:temporal-data "internationalization"))][table:put indicators:temporal-data "internationalization" []]
-  ifelse table:has-key? indicators:temporal-data "metropolization" [table:put indicators:temporal-data "metropolization" (lput indicators:metropolization (table:get indicators:temporal-data "metropolization"))][table:put indicators:temporal-data "metropolization" []]
+  ifelse table:has-key? indicators:temporal-data "metropolisation" [table:put indicators:temporal-data "metropolisation" (lput indicators:metropolisation (table:get indicators:temporal-data "metropolisation"))][table:put indicators:temporal-data "metropolisation" []]
   ifelse table:has-key? indicators:temporal-data "networkAvgCommunitySize" [table:put indicators:temporal-data "networkAvgCommunitySize" (lput indicators:network-average-community-size (table:get indicators:temporal-data "networkAvgCommunitySize"))][table:put indicators:temporal-data "networkAvgCommunitySize" []]
   ifelse table:has-key? indicators:temporal-data "networkDegreeEntropy" [table:put indicators:temporal-data "networkDegreeEntropy" (lput indicators:network-weighted-degree-distribution-entropy (table:get indicators:temporal-data "networkDegreeEntropy"))][table:put indicators:temporal-data "networkDegreeEntropy" []]
   ifelse table:has-key? indicators:temporal-data "flowsHierarchyAlpha" [table:put indicators:temporal-data "flowsHierarchyAlpha" (lput indicators:flows-distribution-ranksize (table:get indicators:temporal-data "flowsHierarchyAlpha"))][table:put indicators:temporal-data "flowsHierarchyAlpha" []]
@@ -195,8 +195,8 @@ to-report indicators:internationalization
 end
 
 ;;
-; metropolization as deviation from expected flows as function of size only
-to-report indicators:metropolization
+; deviation from expected flows as function of size only
+to-report indicators:deviation-expected-flows
   let orderedcities sort-on [cities:number] cities
   let ei matrix:from-row-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
   let ej matrix:from-column-list (utils:list:rep (map [? -> [city:gdp] of ? ] orderedcities) (length orderedcities))
@@ -335,6 +335,19 @@ to-report indicators:correlation-degree-size
   let sizes map [? -> [ln city:gdp] of ?] orderedcities
   report utils:statistics:pearson-correlation-ci degrees sizes
 end
+
+
+;;
+; correlation weighted degree - size = metropolisation
+;  done on logs
+to-report indicators:metropolisation
+  let orderedcities sort-on [cities:number] cities
+  let wdegrees map [? -> genlog ([city:weighted-degree] of ?)] orderedcities
+  let sizes map [? -> [ln city:gdp] of ?] orderedcities
+  ;report item 0 (utils:statistics:pearson-correlation-ci wdegrees sizes)
+  report utils:statistics:pearson-correlation-ci wdegrees sizes
+end
+
 
 
 ;;

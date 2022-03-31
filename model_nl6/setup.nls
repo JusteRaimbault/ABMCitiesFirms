@@ -23,7 +23,7 @@ to setup:setup
   ]
     
   set indicators:temporal-data table:make
-  set indicators:tracked (list "internationalization" "metropolization" "networkAvgCommunitySize" "networkDegreeEntropy" "flowsHierarchyAlpha" "rhoDegreeSize" "rhoFlowDistance" "networkDegreeHierarchyAlpha")
+  set indicators:tracked (list "internationalization" "metropolisation" "networkAvgCommunitySize" "networkDegreeEntropy" "flowsHierarchyAlpha" "rhoDegreeSize" "rhoFlowDistance" "networkDegreeHierarchyAlpha")
   
   reset-ticks
   
@@ -94,8 +94,7 @@ to setup:setup-headless
   
   set cities:structure-evolution-mode "fixed"
   
-  ;set runtime:city-evolution-scale 10000.0 ; fixed anyway
-  set runtime:city-evolution-scale 10
+  set runtime:city-evolution-scale 10 ; fixed anyway
   
 end
   

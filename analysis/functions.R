@@ -42,7 +42,7 @@ fitDistrPowerLaw<-function(x,xlab='x',ylab='CDF',file='fitDistrPowerLaw.png'){
 }
 
 
-map<- function(data,var,sizevar,filename,discrete=FALSE,legendtitle=NULL,legendsizetitle=NULL,xlim=c(-130,150),ylim=c(-50, 60),width=30,height=12){
+map<- function(data,var,sizevar,filename,countries,discrete=FALSE,legendtitle=NULL,legendsizetitle=NULL,xlim=c(-130,150),ylim=c(-50, 60),width=30,height=12){
   #WorldData <- map_data('world') %>% filter(region != "Antarctica") %>% fortify
   #sizes = log10(data[[sizevar]]);sizes = (sizes - min(sizes,na.rm = T)) / (max(sizes,na.rm = T) - min(sizes,na.rm = T))
   #data[['sizes']]=sizes

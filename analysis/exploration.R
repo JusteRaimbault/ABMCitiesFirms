@@ -1,5 +1,5 @@
 
-setwd(paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration'))
+setwd(paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/openmole'))
 
 library(dplyr)
 library(ggplot2)
@@ -38,10 +38,14 @@ nominals = list("gravityDecay"=500,"countryGravityDecay"=500,"gammaSectors"=1,"g
 #####
 # one factor plots
 
-resPrefix = '20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
-resdir = paste0(resPrefix,'/')
+#resPrefix = '20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
+resPrefix = '20220328_140001_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID'
+resdir = paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration/',resPrefix,'/')
+dir.create(resdir,recursive = T)
+res<-loadData(resPrefix,resdir = 'exploration/',addSepInName='.')
 
-res <- loadData(resPrefix,sep='\t')
+# for 20190924_162740_ONEFACTOR_REPLICATIONS_SYNTHETIC_GRID
+#res <- loadData(resPrefix,sep='\t')
 
 #onefactorParamIndex = 1
 #onefactorParamIndex = 4 # links : path dependency ? bof
@@ -70,8 +74,8 @@ for(param in parameters[-onefactorParamIndex]){rows=rows&res[,param]==nominals[[
 
 # gravity decay
 sres = res[rows,] %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
-  rhoDegreeSizeSd = sd(rhoDegreeSize),
-  rhoDegreeSize = mean(rhoDegreeSize), 
+  metropolizationSd = sd(metropolization),
+  metropolization = mean(metropolization), 
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization)
 )
@@ -82,8 +86,10 @@ g+geom_point()+geom_line()+geom_errorbar(aes(ymin=internationalization-internati
 ggsave(file=paste0(resdir,'internationalisation-gravityDecay_errorbars.png'),width=18,height=15,units='cm')
 
 # note: metropolisation in the paper is correlation degree/size (not metropolization in the sim files/nl model)
-g=ggplot(sres,aes(x=gravityDecay,y=rhoDegreeSize))
-g+geom_point()+geom_line()+geom_errorbar(aes(ymin=rhoDegreeSize-rhoDegreeSizeSd,ymax=rhoDegreeSize+rhoDegreeSizeSd))+
+# 20220330: indic name in netlogo has been corrected, metroploization is indeed corr weighted degree/size
+#g=ggplot(sres,aes(x=gravityDecay,y=rhoDegreeSize))
+g=ggplot(sres,aes(x=gravityDecay,y=metropolization))
+g+geom_point()+geom_line()+geom_errorbar(aes(ymin=metropolization-metropolizationSd,ymax=metropolization+metropolizationSd))+
   xlab(expression(d[0]))+ylab('Metropolisation')+stdtheme
 ggsave(file=paste0(resdir,'metropolisation-gravityDecay_errorbars.png'),width=18,height=15,units='cm')
 
@@ -99,8 +105,8 @@ for(param in parameters[-onefactorParamIndex]){rows=rows&res[,param]==nominals[[
 res$gammaSectors = round(res$gammaSectors,digits = 3)
 
 sres = res[rows,] %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
-  rhoDegreeSizeSd = sd(rhoDegreeSize),
-  rhoDegreeSize = mean(rhoDegreeSize), 
+  metropolizationSd = sd(metropolization),
+  metropolization = mean(metropolization), 
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization)
 )
@@ -110,8 +116,8 @@ g+geom_point()+geom_line()+geom_errorbar(aes(ymin=internationalization-internati
   xlab(expression(gamma[S]))+ylab('Internationalisation')+stdtheme
 ggsave(file=paste0(resdir,'internationalisation-gammaSectors_errorbars.png'),width=18,height=15,units='cm')
 
-g=ggplot(sres,aes(x=gammaSectors,y=rhoDegreeSize))
-g+geom_point()+geom_line()+geom_errorbar(aes(ymin=rhoDegreeSize-rhoDegreeSizeSd,ymax=rhoDegreeSize+rhoDegreeSizeSd),width=0.05)+
+g=ggplot(sres,aes(x=gammaSectors,y=metropolization))
+g+geom_point()+geom_line()+geom_errorbar(aes(ymin=metropolization-metropolizationSd,ymax=metropolization+metropolizationSd),width=0.05)+
   xlab(expression(gamma[S]))+ylab('Metropolisation')+stdtheme
 ggsave(file=paste0(resdir,'metropolisation-gammaSectors_errorbars.png'),width=18,height=15,units='cm')
 
@@ -140,12 +146,17 @@ summary(sharpes)
 ## Grid plots
 
 
-resPrefix = '20190925_134404_DIRECTSAMPLING_SYNTHETIC_GRID'
-resdir = paste0(resPrefix,'/')
-res<-loadData(resPrefix)
+#resPrefix = '20190925_134404_DIRECTSAMPLING_SYNTHETIC_GRID'
+resPrefix = '20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID'
+resdir = paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration/',resPrefix,'/')
+dir.create(resdir,recursive = T)
+res<-loadData(resPrefix,resdir = 'exploration/',addSepInName='.')
 
+# missing param point? for 20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID
+#missid = sort(unique(res$id))-seq(from=min(res$id),to=max(res$id),by=1)
+#which(missid<0);length(unique(res$id));max(res$id) # -> just missing one repet
 
-sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarize(
+sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLinks,gammaOrigin,gammaDestination) %>% summarise(
   internationalizationSd = sd(internationalization),
   internationalization = mean(internationalization),
   metropolizationSd = sd(metropolization),
@@ -161,8 +172,12 @@ sres <- res %>% group_by(gravityDecay,countryGravityDecay,gammaSectors,gammaLink
   rhoFlowDistanceSd=sd(rhoFlowDistance),
   rhoFlowDistance = mean(rhoFlowDistance),
   networkDegreeHierarchyAlphaSd = sd(networkDegreeHierarchyAlpha),
-  networkDegreeHierarchyAlpha = mean(networkDegreeHierarchyAlpha)
+  networkDegreeHierarchyAlpha = mean(networkDegreeHierarchyAlpha),
+  count=n()
 )
+
+# for 20220324_171459_DIRECTSAMPLING_SYNTHETIC_GRID
+# sres$count[sres$count < 20] = 18 14 19  9 # ok, miss 11 at most -> no need to re-run
 
 
 for(countryGravityDecay in unique(res$countryGravityDecay)){
@@ -177,15 +192,15 @@ for(indicator in indicators){
   }
 }
 
-# same but fixed gammaLinks (close to no effect -> need to change that process)
-# or can we do a large number enough of simulations to see a significant effect ? -> interesting exercize !
+# same but fixed gammaLinks (role of that process: ?)
 
 #sres$gammaOriginString = sapply(sres$gammaOrigin,function(s){expression(gamma[F]*"="*s)})
 sres$gammaOriginString = paste0('gamma[O]*"="*',sres$gammaOrigin)
 
 ylabs = indicators;names(ylabs)<-indicators
 ylabs[["internationalization"]] = "Internationalisation"
-ylabs[["rhoDegreeSize"]] = "Metropolisation"
+#ylabs[["rhoDegreeSize"]] = "Metropolisation" # for older file with non weighted degree
+ylabs[["metropolization"]] = "Metropolisation"
 ylabs[["networkAvgCommunitySize"]] = "Average community size"
 
 for(countryGravityDecay in unique(res$countryGravityDecay)){
@@ -203,6 +218,24 @@ for(countryGravityDecay in unique(res$countryGravityDecay)){
   }
 }
 
+
+## aggreg point closest to macro indicators internationalisation/metropolisation
+sres$errorInternationalisation = abs(sres$internationalization - 0.32)
+sres$errorMetropolisation = abs(sres$metropolization - 0.96)
+
+nrow(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,]) # 67 / 6534
+summary(sres$errorInternationalisation) # min = 0.0001737
+summary(sres$errorMetropolisation) # min = 0.06491
+
+g=ggplot(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,],aes(x=errorInternationalisation,y=errorMetropolisation,color=gravityDecay))
+g+geom_point(alpha=0.5)
+
+sres$relErrorInternationalisation = abs(sres$internationalization - 0.32)/0.32
+sres$relErrorMetropolisation = abs(sres$metropolization - 0.96)/0.96
+g=ggplot(sres[sres$errorInternationalisation<0.1&sres$errorMetropolisation<0.1,],aes(x=relErrorInternationalisation,y=relErrorMetropolisation,color=gravityDecay))
+g+geom_point(alpha=0.5)
+
+nrow(sres[sres$relErrorInternationalisation<0.1&sres$errorMetropolisation<0.1,])
 
 
 ##### hierarchy experiment
