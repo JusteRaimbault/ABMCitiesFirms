@@ -1,0 +1,6 @@
+30/03/2022 16:28:04 ; running 5 ; 8556/8561 ; 16:58:05 ; running
+EGIEnvironment 10d14h ; up 10.08M ; down 30.87M ; running 4 ; finished 340 ; failed 822 ; errors 200 [error 55: /home/batch picocontainer]
+local finished 7361
+
+=> stop 31/03 10h42
+
