@@ -240,11 +240,17 @@ nrow(sres[sres$relErrorInternationalisation<0.1&sres$errorMetropolisation<0.1,])
 
 ##### hierarchy experiment
 
-resPrefix = '20200901_142525_TARGETEDHIERARCHY_SYNTHETIC_GRID'
-resdir = paste0(resPrefix,'/');dir.create(resdir)
-res <- loadData(resPrefix,resdir='../../model_nl6/exploration/',addSepInName = '.')
-resPrefix2 = '20200831_213603_TARGETEDHIERARCHY_SYNTHETIC_GRID'
-res<-rbind(res,loadData(resPrefix2,resdir='../../model_nl6/exploration/',addSepInName = '.'))
+#resPrefix = '20200901_142525_TARGETEDHIERARCHY_SYNTHETIC_GRID'
+#resdir = paste0(resPrefix,'/');dir.create(resdir)
+#res <- loadData(resPrefix,resdir='../../model_nl6/exploration/',addSepInName = '.')
+#resPrefix2 = '20200831_213603_TARGETEDHIERARCHY_SYNTHETIC_GRID'
+#res<-rbind(res,loadData(resPrefix2,resdir='../../model_nl6/exploration/',addSepInName = '.'))
+
+resPrefix = '20220330_152808_TARGETEDHIERARCHY_SYNTHETIC_GRID'
+resdir = paste0(Sys.getenv('CS_HOME'),'/UrbanDynamics/Models/ABMCitiesFirms/Results/Exploration/',resPrefix,'/')
+dir.create(resdir,recursive = T)
+res<-loadData(resPrefix,resdir = 'exploration/',addSepInName='.')
+
 
 data.frame(res %>% group_by(id) %>% summarize(count=n()))
 res = res[res$id>=4&res$setupScalingExponent>=0.5,]
