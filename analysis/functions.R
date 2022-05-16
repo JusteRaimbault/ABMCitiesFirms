@@ -25,7 +25,7 @@ maxmodularity<-function(membership,adjacency){
 }
 
 
-fitDistrPowerLaw<-function(x,xlab='x',ylab='CDF',file='fitDistrPowerLaw.png'){
+fitDistrPowerLaw<-function(x,xlab='x',ylab='CDF',file='fitDistrPowerLaw.png',y1=0.003,y2=0.005){
   degpowerlaw = conpl$new(x)
   est = estimate_xmin(degpowerlaw,xmax = max(x))
   degpowerlaw$setXmin(est)
@@ -35,8 +35,8 @@ fitDistrPowerLaw<-function(x,xlab='x',ylab='CDF',file='fitDistrPowerLaw.png'){
   est = estimate_xmin(degln)
   degln$setXmin(est)
   lines(degln, col=3, lwd=2)
-  text(x=min(x),y=0.005,adj=c(0,0),labels = paste0('Log-normal: mu=',round(degln$pars[1],digits=2),', sigma=',round(degln$pars[2],digits=2),', xmin=',round(degln$xmin,digits=2)),cex=0.6)
-  text(x=min(x),y=0.003,adj=c(0,0),labels = paste0('Power law: alpha=',round(degpowerlaw$pars[1],digits=2),', xmin=',round(degpowerlaw$xmin,digits=2)),cex=0.6)
+  text(x=min(x),y=y2,adj=c(0,0),labels = paste0('Log-normal: mu=',round(degln$pars[1],digits=2),', sigma=',round(degln$pars[2],digits=2),', xmin=',round(degln$xmin,digits=2)),cex=1)
+  text(x=min(x),y=y1,adj=c(0,0),labels = paste0('Power law: alpha=',round(degpowerlaw$pars[1],digits=2),', xmin=',round(degpowerlaw$xmin,digits=2)),cex=1)
   dev.off()
   return(list(powerlaw=degpowerlaw,ln=degln))
 }

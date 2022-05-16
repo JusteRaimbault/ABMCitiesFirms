@@ -38,8 +38,11 @@ paramnames = list(gammaOrigin = expression(gamma[O]),
 # full model
 for(param in parameters){
   g=ggplot(res,aes_string(x="logmse",y="mselog",color=param,size='evolution.samples'))
-  g+geom_point(alpha=0.6)+xlab("log(Mean Squared Error)")+ylab("Mean Squared Error on log")+
+  #g+geom_point(alpha=0.6)+xlab("log(Mean Squared Error)")+ylab("Mean Squared Error on log")+
+  #  scale_color_continuous(name=paramnames[[param]])+scale_size_continuous(name='Samples')+stdtheme
+  g+geom_point(alpha=0.6)+xlab(expression(epsilon[M]))+ylab(expression(epsilon[L]))+
     scale_color_continuous(name=paramnames[[param]])+scale_size_continuous(name='Samples')+stdtheme
+    
   ggsave(paste0(resdir,'/pareto_color',param,'.png'),width=20,height=18,units='cm')
 }
 

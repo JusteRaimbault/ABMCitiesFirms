@@ -47,7 +47,8 @@ fitDistrPowerLaw(strength(g,mode='in')[strength(g,mode='in')>0],'Weighted in-deg
 fitDistrPowerLaw(strength(g,mode='out')[strength(g,mode='out')>0],'Weighted out-degree',file='Results/EmpiricalNetwork/out-degreeDistr.png')
 
 # edge weight distribution
-fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='Results/EmpiricalNetwork/edgeweight.png')
+fitdegweights = fitDistrPowerLaw(E(g)$weight[E(g)$weight>0],'Edge weight',file='Results/EmpiricalNetwork/edgeweight.png',
+                                 y1 = 2e-4, y2 = 4e-4)
 
 # centrality distrib: bw? # ! makes not much sense in practice
 
@@ -68,7 +69,7 @@ directedmodularity(communities_clauset$membership,A) # 0.3521929
 directedmodularity(communities_louvain$membership,A) # 0.361524
 
 # countries mod = internationalisation
-directedmodularity(V(g)$fuacountry,A) # 0.3200182
+directedmodularity(V(g)$fuacountry,A) # 0.3232149
 
 # null model with 30 random communities
 bnum=1000; mods = c()
@@ -77,6 +78,7 @@ for(b in 1:bnum){
   mods=append(mods,directedmodularity(sample.int(30,size=length(V(g)),replace = T),A))
 }
 mean(mods);sd(mods)
+# 0.05038611 ; 0.001729387
 
 # max modularity?
 maxmodularity(communities_louvain$membership,A)
