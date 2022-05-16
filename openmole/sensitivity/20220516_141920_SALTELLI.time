@@ -1,0 +1,7 @@
+(fail: error model path)
+16/05/2022 14:19:20 ; 1:45:40 ; cleaning
+firstEvaluation 160000
+EGIEnvironment 3d4h ; up 131.56 ; down 2.48G ; submitted 1179 ; running 0 ; finished 4736 ; failed 82 ; errors 200+ - A workflow job execution failed during the a job execution on the execution node  | java.io.FileNotFoundException: Model file was not found - 155 
+
+local finished 160001
+

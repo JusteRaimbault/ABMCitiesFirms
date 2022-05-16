@@ -1,0 +1,8 @@
+(fail: cancelled [later: pb model path])
+12/05/2022 10/03/15 ; 95:57:13 ; cancelled
+completed first eval 160000
+
+EGIEnvironment 2m10d3h ; up 3.21G ; down 35.08G ; finished 459737 ; failed 403 ; errors 200+  - 163 java.io.FileNotFoundException: Model file was not found
+
+local 160001
+

@@ -1,0 +1,7 @@
+21/04/2022 11:14:08 ; 123:13:06 ; cancelled
+
+nsga2 masterTask 30471 ; slaveFist 31471 ; islandTask 30471
+
+EGIEnvironment 6y11m1d7h ; Up 52.63G ; Down 148.63G ; finished 351401 ; failed 67697 ; errors 200+ (424 failed dependancy: banned by stsbg ?)
+local finished 154357
+

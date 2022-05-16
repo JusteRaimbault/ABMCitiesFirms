@@ -23,8 +23,8 @@ val cmds = Seq("experiments:setup-experiment \"real\" 1.0 21 \"log-normal\" ${fi
 val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",cmds,embedWorkspace=true,reuseWorkspace=true) set (
     inputs += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
       gravityDecay,countryGravityDecay,replication),
-    outputs += errorInternationalisation mapped "abs (indicators:internationalization - 0.32) ",
-    outputs += errorMetropolisation mapped "abs ((first indicators:metropolisation) - 0.96)"//,
+    outputs += errorInternationalisation mapped "(abs (indicators:internationalization - 0.32))/ 0.32",
+    outputs += errorMetropolisation mapped "(abs ((first indicators:metropolisation) - 0.96))/ 0.96"//,
     //countryGravityDecay := 0.0//,
     //finalTime := 500
 )
@@ -46,13 +46,13 @@ NSGA2Evolution(
         gammaLinks in (0.0,20.0),
         gammaOrigin in (0.0,20.0),
         gammaDestination in (0.0,20.0),
-        finalTime in (100.0, 2000.0) // faster - check if saturates or unif distrib
+        finalTime in (100.0, 10000.0)
       ),
       populationSize = 200,
       objective = Seq(errorMetropolisation,errorInternationalisation),
       evaluation = model,
       stochastic = Stochastic(seed = replication),
-      termination = 100000,
+      termination = 1000000,
       parallelism = 1000
-) by Island(30 minutes) hook (workDirectory / "calibration" / resdir,1000) on env
+) by Island(60 minutes) hook (workDirectory / "calibration" / resdir,1000) on env
 
