@@ -24,41 +24,37 @@ val model = NetLogo6Task(workDirectory / "model" / "HEADLESS_CitiesFirms.nlogo",
     inputs += (finalTime,gammaOrigin,gammaDestination,gammaLinks,gammaSectors,
       gravityDecay,countryGravityDecay,replication),
     outputs += mselog mapped "indicators:mse-log",
-    outputs += logmse mapped "indicators:log-mse"//,
+    outputs += logmse mapped "indicators:log-mse",
+    countryGravityDecay := 0.0//,
     //finalTime := 500
 )
 
-val purpose = "CALIBRATION_GRID"
+val purpose = "CALIBRATION_NOCOUNTRY_GRID"
+//val purpose = "CALIBRATION_GRID"
 //val purpose = "CALIBRATION_TEST"
 val datestr = (new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()).toString
-val resdir = purpose+"_"+datestr
+val resdir = datestr+"_"+purpose
 
 val env = EGIEnvironment("vo.complex-systems.eu",openMOLEMemory = 2000 megabytes)
 //val env = LocalEnvironment(5)
 
 
-val evolution =
-  NSGA2Evolution(
+NSGA2Evolution(
     genome =
       Seq(
-        gravityDecay in (1.0,10000.0),
-        countryGravityDecay in (0.01,200.0),
+        gravityDecay in (0.0,10000.0),
+        //countryGravityDecay in (0.0,200.0),
         gammaSectors in (0.0,20.0),
         gammaLinks in (0.0,20.0),
         gammaOrigin in (0.0,20.0),
         gammaDestination in (0.0,20.0),
-        finalTime in (500.0, 5000.0)
+        finalTime in (500.0, 5000.0) // 100,10000
       ),
-      mu = 200,
-      objectives = Seq(mselog,logmse),
+      populationSize = 200,
+      objective = Seq(mselog,logmse),
       evaluation = model,
       stochastic = Stochastic(seed = replication),
-      termination = 50000,
-      parallelism = 1000,
-      distribution = Island(20 minutes)
-)
+      termination = 50000, //100000
+      parallelism = 1000
+) by Island(20 minutes) hook (workDirectory / "calibration" / resdir,1000) on env
 
-val savePopulation = SavePopulationHook(evolution, workDirectory / "calibration" / resdir,1000)
-
-
-(evolution on env hook savePopulation)

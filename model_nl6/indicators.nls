@@ -145,14 +145,21 @@ end
 ;;
 ; log mse - in that case, rescaling is optimal at 
 ;    k0 = <phi_ij \hat{phi}_ij> / <\hat{phi}_ij ^2>
+;  ! can not have a different rescaling across indicators, this must be the same!
 to-report indicators:log-mse
   let realmatrix links:adjacency-matrix real-firmlinks
   let simmatrix links:adjacency-matrix firmlinks
   ; note: could have globals to avoid recomputing - fine, O(|Links|)
   let N item 0 matrix:dimensions realmatrix
-  let phihatsquared (sum map sum matrix:to-row-list (matrix:map [phi -> phi ^ 2] simmatrix)) / (N * N)
-  let phiphihat (sum map sum matrix:to-row-list (matrix:times-element-wise realmatrix simmatrix)) / (N * N)
-  let k0 phiphihat / phihatsquared
+  
+  ;let phihatsquared (sum map sum matrix:to-row-list (matrix:map [phi -> phi ^ 2] simmatrix)) / (N * N)
+  ;let phiphihat (sum map sum matrix:to-row-list (matrix:times-element-wise realmatrix simmatrix)) / (N * N)
+  ;let k0 phiphihat / phihatsquared
+  let logphi matrix:map [phi -> indicators:log-zero phi] realmatrix
+  let logphihat matrix:map [phi -> indicators:log-zero phi] simmatrix
+  ; compute rescaling constant
+  let k0 ((sum map sum matrix:to-row-list logphi) / (N * N)) - ((sum map sum matrix:to-row-list logphihat) / (N * N))
+  
   let squares matrix:map [phi -> phi ^ 2] (matrix:minus realmatrix (matrix:map [phi -> phi * k0] simmatrix))
   let res ln ((sum map sum matrix:to-row-list squares) / (N * N))
   ;show (word "k0 = " k0)
