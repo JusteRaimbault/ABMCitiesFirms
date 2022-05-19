@@ -54,7 +54,7 @@ NSGA2Evolution(
       objective = Seq(mselog,logmse),
       evaluation = model,
       stochastic = Stochastic(seed = replication),
-      termination = 50000, //100000
+      termination = 1000000,
       parallelism = 1000
 ) by Island(20 minutes) hook (workDirectory / "calibration" / resdir,1000) on env
 

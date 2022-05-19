@@ -83,7 +83,7 @@ val env = LocalEnvironment(5)
 val replications = Replication (
    //evaluation = (model on env by 5 hook indics_hook), // one factor
    //evaluation = (model on env by 20 hook indics_hook), // grid
-   evaluation = (model on env hook ToStringHook()), // test 
+   evaluation = (model on env hook indics_hook), // test 
    seed = replication,
    //sample = 100 // one factor
    //sample = 20 // grid exploration, hierarchy
@@ -125,7 +125,7 @@ val exploration = DirectSampling(
      )*/
       LHS(2,factor=Seq(
         gravityDecay in Range(10.0,5000.0),
-	    countryGravityDecay in Range(10.0,5000.0),
+	    //countryGravityDecay in Range(10.0,5000.0),
         gammaSectors in Range(0.0,2.0),
         gammaLinks in Range(0.0,2.0),
         gammaOrigin in Range(0.0,2.0),
@@ -133,6 +133,7 @@ val exploration = DirectSampling(
         )
       ) x (setupScalingExponent is 1.0)
          withIndex id )
+         x (countryGravityDecay is 0.0)
          x (setupSectorsNumber is 21)//50)
          x (setupSectorsMode is "log-normal")
          //x (finalTime is 5000)
