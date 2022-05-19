@@ -158,7 +158,7 @@ to-report indicators:log-mse
   let logphi matrix:map [phi -> indicators:log-zero phi] realmatrix
   let logphihat matrix:map [phi -> indicators:log-zero phi] simmatrix
   ; compute rescaling constant
-  let k0 ((sum map sum matrix:to-row-list logphi) / (N * N)) - ((sum map sum matrix:to-row-list logphihat) / (N * N))
+  let k0 exp (((sum map sum matrix:to-row-list logphi) / (N * N)) - ((sum map sum matrix:to-row-list logphihat) / (N * N)))
   
   let squares matrix:map [phi -> phi ^ 2] (matrix:minus realmatrix (matrix:map [phi -> phi * k0] simmatrix))
   let res ln ((sum map sum matrix:to-row-list squares) / (N * N))
